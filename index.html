@@ -1,0 +1,1893 @@
+<!DOCTYPE html>
+<html lang="hi" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>द स्पीक - डिजिटल ई-पेपर, एडमिन पैनल एवं समाचार पोर्टल</title>
+    
+    <!-- Content Security Policy -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: 'unsafe-inline' 'unsafe-eval'; img-src 'self' https: data:; font-src 'self' https:; style-src 'self' https: 'unsafe-inline'; script-src 'self' https: 'unsafe-inline' 'unsafe-eval';">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts for Hindi & Modern Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Rozha+One&family=Yatra+One&family=Tiro+Devanagari+Hindi:ital@0;1&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Poppins"', 'sans-serif'],
+                        'hindi-title': ['"Yatra One"', 'serif'],
+                        'hindi-serif': ['"Rozha One"', 'serif'],
+                        'hindi-body': ['"Tiro Devanagari Hindi"', 'serif'],
+                    },
+                    colors: {
+                        news: {
+                            50: '#fff1f2',
+                            100: '#ffe4e6',
+                            500: '#f43f5e',
+                            600: '#e11d48',
+                            700: '#be123c',
+                            800: '#9f1239',
+                            900: '#881337',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        .font-hindi-title { font-family: 'Yatra One', serif; }
+        .font-hindi-serif { font-family: 'Rozha One', serif; }
+        .font-hindi-body { font-family: 'Tiro Devanagari Hindi', serif; }
+        
+        body {
+            font-family: 'Poppins', 'Tiro Devanagari Hindi', sans-serif;
+        }
+
+        /* E-Paper Clipping Hotspot Effect */
+        .epaper-hotspot {
+            position: relative;
+            transition: all 0.2s ease-in-out;
+            border: 1px dashed rgba(225, 29, 72, 0.3);
+        }
+        .epaper-hotspot:hover {
+            border: 2px solid #e11d48;
+            background-color: rgba(225, 29, 72, 0.08);
+            box-shadow: 0 4px 12px rgba(225, 29, 72, 0.15);
+        }
+
+        /* Ticker Animation */
+        @keyframes ticker {
+            0% { transform: translate3d(0, 0, 0); }
+            100% { transform: translate3d(-50%, 0, 0); }
+        }
+        .animate-ticker {
+            display: inline-flex;
+            white-space: nowrap;
+            animation: ticker 35s linear infinite;
+        }
+        .animate-ticker:hover {
+            animation-play-state: paused;
+        }
+
+        /* Newspaper Paper Texture Styling */
+        .paper-texture {
+            background-color: #fdfbf7;
+            background-image: radial-gradient(#e5e0d8 0.5px, transparent 0.5px);
+            background-size: 12px 12px;
+        }
+
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .dark ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #e11d48;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-100 text-slate-800 dark:bg-slate-950 dark:text-slate-100 min-h-screen flex flex-col justify-between transition-colors duration-200">
+
+    <!-- Top Announcement Bar -->
+    <div class="bg-news-700 text-white text-xs py-2 px-4 shadow-sm">
+        <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-2">
+            <div class="flex items-center gap-4 text-xs font-medium">
+                <span class="flex items-center gap-1.5">
+                    <i class="fa-solid fa-calendar-days text-news-200"></i>
+                    <span id="currentDateDisplay">मंगलवार, 15 सितंबर 2026</span>
+                </span>
+                <span class="hidden sm:flex items-center gap-1.5 border-l border-news-600 pl-4">
+                    <i class="fa-solid fa-cloud-sun text-amber-300"></i>
+                    <span>बरेली: 29°C (साफ मौसम)</span>
+                </span>
+                <span class="hidden md:flex items-center gap-1.5 border-l border-news-600 pl-4">
+                    <i class="fa-solid fa-location-dot text-news-200"></i>
+                    <span>संस्करण: <strong id="topEditionLabel" class="text-amber-200 font-bold">बरेली नगर</strong></span>
+                </span>
+            </div>
+
+            <div class="flex items-center gap-3 text-xs">
+                <!-- Admin CMS Button -->
+                <button onclick="promptAdminLogin()" class="bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold px-2.5 py-0.5 rounded-md shadow flex items-center gap-1.5 transition">
+                    <i class="fa-solid fa-user-shield text-xs"></i>
+                    <span id="adminBadgeText">संपादक लॉग इन (Admin)</span>
+                </button>
+                <span>|</span>
+                <a href="#epaper" class="hover:text-amber-200 transition font-semibold">ई-पेपर</a>
+                <span>|</span>
+                <button onclick="openBookmarksModal()" class="hover:text-amber-200 transition flex items-center gap-1">
+                    <i class="fa-solid fa-bookmark text-amber-300"></i>
+                    <span>सेव की गई खबरें (<span id="bookmarkCount">0</span>)</span>
+                </button>
+                <span>|</span>
+                <button onclick="toggleDarkMode()" class="hover:text-amber-200 transition p-1" title="लाइट / डार्क मोड">
+                    <i id="themeIcon" class="fa-solid fa-moon"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Header & Branding -->
+    <header class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-40 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+            
+            <!-- Brand Title -->
+            <a href="#" class="text-center md:text-left group flex items-center gap-3">
+                <div class="w-12 h-12 rounded-xl bg-news-700 text-white font-hindi-title text-2xl flex items-center justify-center shadow-lg shadow-news-700/20 group-hover:scale-105 transition-transform">
+                    स्पीक
+                </div>
+                <div>
+                    <h1 class="text-3xl md:text-5xl font-hindi-title text-news-700 dark:text-news-500 tracking-wider leading-none">द स्पीक</h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">निष्पक्ष पत्रकारिता • डिजिटल ई-पेपर एवं CMS प्रकाशन पोर्टल</p>
+                </div>
+            </a>
+
+            <!-- Edition Selector, Quick Date & Search Bar -->
+            <div class="flex flex-wrap items-center gap-3">
+                <div class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700">
+                    <i class="fa-solid fa-city text-news-600 dark:text-news-400 text-xs pl-2"></i>
+                    <select id="editionSelect" onchange="changeEdition(this.value)" class="bg-transparent text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer pr-2">
+                        <option value="bareilly" class="dark:bg-slate-800">बरेली नगर</option>
+                        <option value="lucknow" class="dark:bg-slate-800">लखनऊ</option>
+                        <option value="delhi" class="dark:bg-slate-800">दिल्ली NCR</option>
+                        <option value="patna" class="dark:bg-slate-800">पटना</option>
+                        <option value="varanasi" class="dark:bg-slate-800">वाराणसी</option>
+                    </select>
+                </div>
+
+                <!-- Global Search Input -->
+                <div class="relative">
+                    <input type="text" id="searchInput" onkeyup="handleSearchKey(event)" placeholder="खबरें या विषय खोजें..." class="w-48 sm:w-60 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-news-500 text-slate-800 dark:text-slate-100">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+                </div>
+
+                <button onclick="executeSearch()" class="bg-news-600 hover:bg-news-700 text-white px-3.5 py-1.5 rounded-xl text-xs font-semibold shadow transition">
+                    खोजें
+                </button>
+            </div>
+        </div>
+
+        <!-- BREAKING NEWS TICKER -->
+        <div class="bg-slate-900 text-white text-xs border-t border-slate-800 flex items-center overflow-hidden">
+            <div class="bg-news-600 text-white font-bold px-4 py-2 uppercase tracking-wider flex items-center gap-2 whitespace-nowrap shrink-0 z-10 shadow-md">
+                <span class="w-2 h-2 rounded-full bg-white animate-ping"></span>
+                <i class="fa-solid fa-bolt"></i>
+                <span>ताज़ा समाचार</span>
+            </div>
+            <div class="overflow-hidden w-full relative py-2">
+                <div id="tickerContent" class="animate-ticker space-x-12">
+                    <!-- Dynamic Ticker Items -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation Menu -->
+        <nav class="bg-slate-900 border-t border-slate-800 text-slate-200">
+            <div class="max-w-7xl mx-auto px-4 flex justify-between items-center">
+                <div class="flex items-center space-x-1 sm:space-x-6 overflow-x-auto py-2.5 text-xs sm:text-sm font-semibold scrollbar-none">
+                    <a href="#home" class="hover:text-news-400 text-news-400 transition whitespace-nowrap px-2 py-1 rounded-lg bg-slate-800/80"><i class="fa-solid fa-house mr-1"></i> होम</a>
+                    <a href="#epaper" class="hover:text-news-400 transition whitespace-nowrap px-2 py-1"><i class="fa-solid fa-newspaper mr-1 text-news-500"></i> ई-पेपर डिजिटल</a>
+                    <a href="#news" class="hover:text-news-400 transition whitespace-nowrap px-2 py-1"><i class="fa-solid fa-fire mr-1 text-amber-500"></i> मुख्य ख़बरें</a>
+                    <a href="#local" class="hover:text-news-400 transition whitespace-nowrap px-2 py-1"><i class="fa-solid fa-building-flag mr-1 text-blue-400"></i> शहर & राज्य</a>
+                    <a href="#blogs" class="hover:text-news-400 transition whitespace-nowrap px-2 py-1"><i class="fa-solid fa-pen-nib mr-1 text-purple-400"></i> विचार & ब्लॉग</a>
+                    <a href="#polls" class="hover:text-news-400 transition whitespace-nowrap px-2 py-1"><i class="fa-solid fa-square-poll-vertical mr-1 text-emerald-400"></i> जनमत & राशिफल</a>
+                    <a href="#gallery" class="hover:text-news-400 transition whitespace-nowrap px-2 py-1"><i class="fa-solid fa-camera mr-1 text-pink-400"></i> फोटो / वीडियो</a>
+                </div>
+
+                <div class="hidden lg:flex items-center text-xs font-bold text-amber-400 gap-2 shrink-0 pl-4 border-l border-slate-800">
+                    <i class="fa-solid fa-cloud-arrow-up text-emerald-400"></i>
+                    <span id="cloudSyncStatus">लाइव क्लाउड सिंक: सक्रिय</span>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="max-w-7xl mx-auto px-4 py-8 space-y-12 flex-grow w-full">
+
+        <!-- DIGITAL E-PAPER VIEWER SECTION -->
+        <section id="epaper" class="bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 p-4 sm:p-6 transition-all">
+            <!-- E-Paper Controls Header -->
+            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center border-b border-slate-200 dark:border-slate-800 pb-4 mb-6 gap-4">
+                <div>
+                    <div class="flex items-center gap-3">
+                        <h2 class="text-2xl sm:text-3xl font-bold font-hindi-serif text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                            <i class="fa-solid fa-book-open text-news-600"></i> 
+                            <span>डिजिटल ई-पेपर व्यूअर</span>
+                        </h2>
+                        <span class="px-2.5 py-0.5 rounded-full bg-news-100 dark:bg-news-950 text-news-700 dark:text-news-400 text-xs font-extrabold uppercase">लाइव डिजिटल एडिशन</span>
+                    </div>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">अखबार के किसी भी समाचार ब्लॉक पर क्लिक करके पूरा विवरण पढ़ें, प्रिंट करें अथवा क्लिप करें।</p>
+                </div>
+
+                <!-- Date & Edition Selection Controls -->
+                <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-between lg:justify-end">
+                    <div class="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700">
+                        <i class="fa-solid fa-calendar text-slate-400 text-xs pl-2"></i>
+                        <input type="date" id="epaperDatePicker" value="2026-09-15" class="bg-transparent text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer pr-2">
+                        <button onclick="loadEpaperByDate()" class="bg-news-600 hover:bg-news-700 text-white px-3 py-1 rounded-lg text-xs font-bold transition">
+                            देखें
+                        </button>
+                    </div>
+
+                    <!-- E-Paper Action Tools -->
+                    <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+                        <button onclick="zoomEpaper('in')" title="ज़ूम इन" class="w-8 h-8 rounded-lg bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center hover:bg-news-50 dark:hover:bg-slate-600 text-xs font-bold shadow-sm">
+                            <i class="fa-solid fa-magnifying-glass-plus"></i>
+                        </button>
+                        <button onclick="zoomEpaper('out')" title="ज़ूम आउट" class="w-8 h-8 rounded-lg bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center hover:bg-news-50 dark:hover:bg-slate-600 text-xs font-bold shadow-sm">
+                            <i class="fa-solid fa-magnifying-glass-minus"></i>
+                        </button>
+                        <button onclick="resetZoomEpaper()" title="रीसेट आकार" class="w-8 h-8 rounded-lg bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center hover:bg-news-50 dark:hover:bg-slate-600 text-xs font-bold shadow-sm">
+                            <i class="fa-solid fa-rotate-right"></i>
+                        </button>
+                        <button onclick="viewUploadedEpaperPDF()" title="ई-पेपर PDF देखें" class="px-3 h-8 rounded-lg bg-news-600 text-white flex items-center gap-1.5 hover:bg-news-700 text-xs font-bold shadow-sm">
+                            <i class="fa-solid fa-file-pdf"></i>
+                            <span class="hidden sm:inline">PDF संस्करण</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <!-- Main E-Paper Page Viewer -->
+                <div class="lg:col-span-3 bg-slate-200 dark:bg-slate-950 rounded-xl p-3 sm:p-6 overflow-auto min-h-[550px] max-h-[800px] flex justify-center items-start relative border border-slate-300 dark:border-slate-800">
+                    
+                    <div id="epaperCanvasContainer" class="paper-texture text-slate-900 shadow-2xl max-w-3xl w-full border-2 border-slate-800 p-6 sm:p-8 transition-transform duration-300 transform origin-top">
+                        <!-- Newspaper Header Banner -->
+                        <div class="text-center border-b-4 border-slate-900 pb-3 mb-6 relative">
+                            <div class="flex justify-between items-center text-[10px] sm:text-xs font-bold text-slate-700 border-b border-slate-400 pb-1 mb-2">
+                                <span>वर्ष: 14 • अंक: 282</span>
+                                <span id="epaperDateTitle" class="font-bold text-news-700">मंगलवार, 15 सितंबर 2026</span>
+                                <span>मूल्य: ₹5.00 • पृष्ठ: <span id="activePageNumText">01</span></span>
+                            </div>
+                            <h3 class="text-4xl sm:text-6xl font-hindi-title text-news-800 tracking-widest my-1">द स्पीक</h3>
+                            <p class="text-xs sm:text-sm font-semibold text-slate-700 font-hindi-body">
+                                <span id="epaperEditionTitle">बरेली नगर संस्करण</span> — दैनिक निष्पक्ष समाचार एवं जन-आवाज डिजिटल पत्र
+                            </p>
+                        </div>
+
+                        <!-- Dynamic Newspaper Page Articles Content -->
+                        <div id="epaperArticlesGrid" class="grid grid-cols-1 md:grid-cols-12 gap-4">
+                            <!-- Injected dynamically based on active page -->
+                        </div>
+
+                        <!-- Newspaper Footer Note -->
+                        <div class="mt-8 pt-3 border-t-2 border-slate-900 flex justify-between items-center text-[10px] text-slate-600 font-semibold">
+                            <span>स्वामी, मुद्रक व प्रकाशक: द स्पीक डिजिटल नेटवर्क प्राइवेट लिमिटेड</span>
+                            <span>पृष्ठ संख्या <span id="activePageFooter">01</span> / 06</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Page Thumbnail & Page Navigation Sidebar -->
+                <div class="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl p-4 flex flex-col space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-2">
+                        <h4 class="font-bold text-sm text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                            <i class="fa-solid fa-layer-group text-news-600"></i>
+                            <span>पन्ने चुनें (Pages)</span>
+                        </h4>
+                        <span class="text-xs font-bold text-slate-500">कुल 6 पन्ने</span>
+                    </div>
+
+                    <!-- Page Thumbnail Buttons Grid -->
+                    <div class="grid grid-cols-2 gap-3" id="pageSelectorButtons">
+                        <!-- Dynamic page selection buttons -->
+                    </div>
+
+                    <!-- Mini Page Information -->
+                    <div class="p-3 rounded-xl bg-amber-50 dark:bg-slate-900/80 border border-amber-200 dark:border-amber-900/50 text-xs text-amber-900 dark:text-amber-200 space-y-1.5 mt-auto">
+                        <p class="font-bold flex items-center gap-1.5">
+                            <i class="fa-solid fa-lightbulb text-amber-600"></i>
+                            <span>एडमिन टूल गाइड:</span>
+                        </p>
+                        <p class="text-[11px] leading-relaxed opacity-90">
+                            ऊपर 'संपादक लॉग इन' पर क्लिक करके नया समाचार प्रकाशित करें या इमेज/PDF अपलोड करें। डाटा तुरंत क्लाउड में सुरक्षित हो जाएगा।
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- MAIN NEWS GRID SECTION -->
+        <section id="news" class="space-y-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b-2 border-news-600 pb-3 gap-4">
+                <h2 class="text-2xl sm:text-3xl font-bold font-hindi-serif text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                    <i class="fa-solid fa-fire text-news-600 animate-pulse"></i> 
+                    <span>मुख्य समाचार (Top Headlines)</span>
+                </h2>
+
+                <!-- News Category Filters -->
+                <div class="flex flex-wrap gap-1.5" id="newsCategoryFilters">
+                    <button onclick="filterNewsCategory('all')" class="news-cat-btn active px-3 py-1 rounded-lg text-xs font-bold bg-news-600 text-white shadow-sm transition">सभी खबरें</button>
+                    <button onclick="filterNewsCategory('national')" class="news-cat-btn px-3 py-1 rounded-lg text-xs font-bold bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-news-100 transition">राष्ट्रीय</button>
+                    <button onclick="filterNewsCategory('tech')" class="news-cat-btn px-3 py-1 rounded-lg text-xs font-bold bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-news-100 transition">तकनीक</button>
+                    <button onclick="filterNewsCategory('sports')" class="news-cat-btn px-3 py-1 rounded-lg text-xs font-bold bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-news-100 transition">खेल</button>
+                    <button onclick="filterNewsCategory('business')" class="news-cat-btn px-3 py-1 rounded-lg text-xs font-bold bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-news-100 transition">कारोबार</button>
+                </div>
+            </div>
+
+            <!-- News Grid Cards -->
+            <div id="mainNewsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Dynamic main news cards injected by JavaScript -->
+            </div>
+        </section>
+
+        <!-- LOCAL & STATE NEWS SECTION -->
+        <section id="local" class="bg-slate-900 text-white rounded-2xl p-6 sm:p-8 space-y-6 shadow-2xl relative overflow-hidden">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-800 pb-4 gap-4">
+                <div>
+                    <span class="text-xs font-bold uppercase text-news-400 tracking-wider">स्थानीय कवरेज</span>
+                    <h2 class="text-2xl sm:text-3xl font-bold font-hindi-serif flex items-center gap-2 mt-0.5">
+                        <i class="fa-solid fa-city text-amber-400"></i>
+                        <span>आपकी नगर की विशेष खबरें: <span id="localEditionHeader" class="text-news-400">बरेली नगर</span></span>
+                    </h2>
+                </div>
+                <div class="text-xs text-slate-400 font-medium">
+                    अपडेट: आज 10:30 AM
+                </div>
+            </div>
+
+            <div id="localNewsGrid" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Local news items injected dynamically based on selected edition -->
+            </div>
+        </section>
+
+        <!-- BLOGS & EDITORIAL SECTION -->
+        <section id="blogs" class="bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 p-6 space-y-6">
+            <div class="border-b border-slate-200 dark:border-slate-800 pb-3 flex items-center justify-between">
+                <h2 class="text-2xl sm:text-3xl font-bold font-hindi-serif text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                    <i class="fa-solid fa-pen-nib text-purple-600"></i>
+                    <span>संपादकीय, विचार एवं विशेष ब्लॉग</span>
+                </h2>
+                <a href="#" class="text-xs font-bold text-news-600 dark:text-news-400 hover:underline flex items-center gap-1">
+                    <span>सभी विचार पढ़ें</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </a>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="blogsContainer">
+                <!-- Injected by JavaScript -->
+            </div>
+        </section>
+
+        <!-- POLL & HOROSCOPE DUAL WIDGET SECTION -->
+        <section id="polls" class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Daily Public Poll -->
+            <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 p-6 space-y-4">
+                <div class="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold text-xs uppercase tracking-wider">
+                    <i class="fa-solid fa-check-to-slot text-sm"></i>
+                    <span>आज का जनमत (Daily Opinion Poll)</span>
+                </div>
+                <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100" id="pollQuestionText">
+                    क्या एआई (Artificial Intelligence) तकनीक से ग्रामीण भारत में रोजगार और कृषि उत्पादन को बड़ा बढ़ावा मिलेगा?
+                </h3>
+
+                <div id="pollOptionsContainer" class="space-y-3 pt-2">
+                    <button onclick="castVote('yes')" class="w-full text-left p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-news-500 bg-slate-50 dark:bg-slate-800 transition flex items-center justify-between group">
+                        <span class="text-xs font-bold text-slate-700 dark:text-slate-200 group-hover:text-news-600">हाँ, निश्चित तौर पर</span>
+                        <span id="votePercentYes" class="text-xs font-extrabold text-news-600">68%</span>
+                    </button>
+                    <button onclick="castVote('no')" class="w-full text-left p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-news-500 bg-slate-50 dark:bg-slate-800 transition flex items-center justify-between group">
+                        <span class="text-xs font-bold text-slate-700 dark:text-slate-200 group-hover:text-news-600">नहीं, कोई खास प्रभाव नहीं</span>
+                        <span id="votePercentNo" class="text-xs font-extrabold text-slate-500">22%</span>
+                    </button>
+                    <button onclick="castVote('maybe')" class="w-full text-left p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-news-500 bg-slate-50 dark:bg-slate-800 transition flex items-center justify-between group">
+                        <span class="text-xs font-bold text-slate-700 dark:text-slate-200 group-hover:text-news-600">कह नहीं सकते</span>
+                        <span id="votePercentMaybe" class="text-xs font-extrabold text-slate-500">10%</span>
+                    </button>
+                </div>
+
+                <div class="text-[11px] text-slate-400 pt-2 flex justify-between items-center border-t border-slate-100 dark:border-slate-800">
+                    <span>कुल वोट: <strong id="totalVotesCount">1,842</strong></span>
+                    <span id="pollStatusBadge" class="text-emerald-600 font-semibold">वोटिंग जारी है</span>
+                </div>
+            </div>
+
+            <!-- Daily Horoscope / राशिफल -->
+            <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 p-6 space-y-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2 text-amber-600 dark:text-amber-400 font-bold text-xs uppercase tracking-wider">
+                        <i class="fa-solid fa-sun text-sm"></i>
+                        <span>आज का राशिफल (Daily Horoscope)</span>
+                    </div>
+                    <select id="zodiacSelect" onchange="updateHoroscope(this.value)" class="bg-slate-100 dark:bg-slate-800 text-xs font-bold border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1 text-slate-700 dark:text-slate-200 focus:outline-none">
+                        <option value="aries">मेष (Aries)</option>
+                        <option value="taurus">वृषभ (Taurus)</option>
+                        <option value="gemini">मिथुन (Gemini)</option>
+                        <option value="cancer">कर्क (Cancer)</option>
+                        <option value="leo">सिंह (Leo)</option>
+                        <option value="virgo">कन्या (Virgo)</option>
+                    </select>
+                </div>
+
+                <div class="p-4 rounded-xl bg-amber-50/60 dark:bg-slate-800/80 border border-amber-200 dark:border-amber-900/40 space-y-2">
+                    <h4 class="font-bold text-sm text-amber-900 dark:text-amber-300 flex items-center gap-2" id="horoscopeTitle">
+                        <i class="fa-solid fa-star text-amber-500"></i>
+                        <span>मेष राशि - आज का दिन शुभ फलदायी</span>
+                    </h4>
+                    <p class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed" id="horoscopeBody">
+                        कार्यक्षेत्र में नई जिम्मेदारियां मिल सकती हैं। आर्थिक स्थिति में सुधार होगा और परिवार में मांगलिक कार्य के योग बनेंगे। स्वास्थ्य सामान्य रहेगा।
+                    </p>
+                    <div class="pt-2 flex items-center gap-4 text-[11px] font-bold text-amber-800 dark:text-amber-400">
+                        <span>शुभ रंग: लाल</span>
+                        <span>•</span>
+                        <span>शुभ अंक: 9</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PHOTO & VIDEO GALLERY SECTION -->
+        <section id="gallery" class="space-y-6">
+            <div class="border-b-2 border-news-600 pb-3 flex items-center justify-between">
+                <h2 class="text-2xl sm:text-3xl font-bold font-hindi-serif text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                    <i class="fa-solid fa-camera text-pink-600"></i>
+                    <span>फोटो एवं वीडियो गैलरी</span>
+                </h2>
+                <span class="text-xs font-bold text-slate-500">द स्पीक स्पेशल मीडिया</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="mediaGalleryGrid">
+                <!-- Gallery items injected dynamically -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MAIN FOOTER SECTION -->
+    <footer class="bg-slate-900 text-white border-t border-slate-800 mt-16 pt-12 pb-8">
+        <div class="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 text-sm">
+            
+            <!-- Column 1: Brand Info -->
+            <div class="space-y-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-news-600 text-white font-hindi-title text-xl flex items-center justify-center font-bold">
+                        स्पीक
+                    </div>
+                    <h3 class="text-2xl font-hindi-title text-news-500 tracking-wider">द स्पीक</h3>
+                </div>
+                <p class="text-slate-400 text-xs leading-relaxed">
+                    सटीक, निष्पक्ष और तेज खबरें। द स्पीक भारत का अग्रणी डिजिटल ई-पेपर और समाचार पोर्टल है जो आपको रखता है हर पल आगे।
+                </p>
+                <div class="pt-2 flex items-center gap-3 text-slate-400 text-lg">
+                    <a href="#" class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center hover:bg-news-600 hover:text-white transition" title="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
+                    <a href="#" class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center hover:bg-news-600 hover:text-white transition" title="Twitter/X"><i class="fa-brands fa-x-twitter"></i></a>
+                    <a href="#" class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center hover:bg-news-600 hover:text-white transition" title="YouTube"><i class="fa-brands fa-youtube"></i></a>
+                    <a href="#" class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center hover:bg-news-600 hover:text-white transition" title="WhatsApp"><i class="fa-brands fa-whatsapp"></i></a>
+                    <a href="#" class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center hover:bg-news-600 hover:text-white transition" title="Telegram"><i class="fa-brands fa-telegram"></i></a>
+                </div>
+            </div>
+
+            <!-- Column 2: Quick Links -->
+            <div class="space-y-3">
+                <h4 class="font-bold text-base text-slate-100 border-b border-slate-800 pb-2">त्वरित लिंक्स</h4>
+                <ul class="space-y-2 text-xs text-slate-400">
+                    <li><a href="#epaper" class="hover:text-news-400 transition flex items-center gap-1.5"><i class="fa-solid fa-chevron-right text-[10px] text-news-500"></i> डिजिटल ई-पेपर व्यूअर</a></li>
+                    <li><a href="#news" class="hover:text-news-400 transition flex items-center gap-1.5"><i class="fa-solid fa-chevron-right text-[10px] text-news-500"></i> राष्ट्रीय व अंतरराष्ट्रीय खबरें</a></li>
+                    <li><a href="#local" class="hover:text-news-400 transition flex items-center gap-1.5"><i class="fa-solid fa-chevron-right text-[10px] text-news-500"></i> बरेली नगर स्थानीय समाचार</a></li>
+                    <li><a href="#blogs" class="hover:text-news-400 transition flex items-center gap-1.5"><i class="fa-solid fa-chevron-right text-[10px] text-news-500"></i> संपादकीय एवं कॉलम</a></li>
+                    <li><a href="#polls" class="hover:text-news-400 transition flex items-center gap-1.5"><i class="fa-solid fa-chevron-right text-[10px] text-news-500"></i> आज का राशिफल & जनमत</a></li>
+                </ul>
+            </div>
+
+            <!-- Column 3: Editions List -->
+            <div class="space-y-3">
+                <h4 class="font-bold text-base text-slate-100 border-b border-slate-800 pb-2">मुख्य ई-पेपर संस्करण</h4>
+                <ul class="space-y-2 text-xs text-slate-400">
+                    <li><button onclick="changeEdition('bareilly')" class="hover:text-news-400 transition">बरेली नगर संस्करण</button></li>
+                    <li><button onclick="changeEdition('lucknow')" class="hover:text-news-400 transition">लखनऊ राज्य संस्करण</button></li>
+                    <li><button onclick="changeEdition('delhi')" class="hover:text-news-400 transition">दिल्ली NCR राजधानी संस्करण</button></li>
+                    <li><button onclick="changeEdition('patna')" class="hover:text-news-400 transition">पटना बिहार संस्करण</button></li>
+                    <li><button onclick="changeEdition('varanasi')" class="hover:text-news-400 transition">वाराणसी पूर्वांचल संस्करण</button></li>
+                </ul>
+            </div>
+
+            <!-- Column 4: Newsletter & Citizen Journalism -->
+            <div class="space-y-3">
+                <h4 class="font-bold text-base text-slate-100 border-b border-slate-800 pb-2">न्यूज़लेटर सब्सक्राइब करें</h4>
+                <p class="text-xs text-slate-400">
+                    रोजाना सुबह की बड़ी खबरें सीधे अपने व्हाट्सएप या ईमेल पर प्राप्त करें।
+                </p>
+                <form onsubmit="handleNewsletterSubmit(event)" class="space-y-2">
+                    <input type="email" required placeholder="अपना ईमेल दर्ज करें..." class="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-white focus:outline-none focus:ring-1 focus:ring-news-500">
+                    <button type="submit" class="w-full py-2 rounded-xl bg-news-600 hover:bg-news-700 text-white font-bold text-xs transition shadow">
+                        सदस्यता लें (Subscribe)
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Bottom Copyright -->
+        <div class="max-w-7xl mx-auto px-4 pt-8 mt-8 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-4">
+            <p>© 2026 द स्पीक (The Speak). सर्वाधिकार सुरक्षित। RNI पंजीयन संख्या: UP-HIN/2012/48192.</p>
+            <div class="flex items-center gap-6">
+                <a href="#" class="hover:text-slate-300">गोपनीयता नीति</a>
+                <a href="#" class="hover:text-slate-300">सेवा की शर्तें</a>
+                <a href="#contact" onclick="openContactModal()" class="hover:text-slate-300">संपर्क सूत्र</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- SECURITY MODAL FOR ADMIN LOGIN -->
+    <div id="securityModal" class="hidden fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 max-w-sm w-full rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 p-6 space-y-4">
+            <div class="text-center">
+                <div class="w-16 h-16 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto mb-3">
+                    <i class="fa-solid fa-shield-halved text-2xl"></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100">संपादक सुरक्षा पासकोड</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">कृपया सुरक्षित पासवर्ड दर्ज करें</p>
+            </div>
+            <form onsubmit="verifyAdminSecurity(event)" class="space-y-3">
+                <input type="password" id="adminPinInput" required placeholder="••••••••••" class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-center text-2xl font-bold tracking-widest text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-news-500">
+                <div class="flex gap-2">
+                    <button type="button" onclick="closeSecurityModal()" class="flex-1 py-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs transition">रद्द करें</button>
+                    <button type="submit" class="flex-1 py-2 rounded-xl bg-news-600 hover:bg-news-700 text-white font-bold text-xs transition">प्रवेश करें</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- BACKEND CMS / ADMIN PUBLISHER MODAL -->
+    <div id="adminPanelModal" class="hidden fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white dark:bg-slate-900 max-w-4xl w-full rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 p-6 space-y-6 relative max-h-[92vh] overflow-y-auto my-auto text-slate-800 dark:text-slate-100">
+            
+            <button onclick="closeAdminPanelModal()" class="absolute top-5 right-5 w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 flex items-center justify-center transition">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <!-- Admin Header Banner -->
+            <div class="flex items-center gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
+                <div class="w-12 h-12 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center font-bold text-xl shadow">
+                    <i class="fa-solid fa-newspaper"></i>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-bold font-hindi-serif flex items-center gap-2">
+                        <span>द स्पीक - रिपोर्टर व संपादक सीएमएस (CMS Panel)</span>
+                        <span class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-300">सुरक्षित क्लाउड मोड़</span>
+                    </h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">सामग्री का प्रबंधन करें, समाचार, छवियां (PNG/JPG), ई-पेपर पृष्ठ एवं PDF फाइलें अपलोड करें।</p>
+                </div>
+            </div>
+
+            <!-- Navigation Tabs in CMS -->
+            <div class="flex border-b border-slate-200 dark:border-slate-800 space-x-4 text-xs font-bold">
+                <button id="tabBtnPublish" onclick="switchAdminTab('publish')" class="pb-2 text-news-600 border-b-2 border-news-600 flex items-center gap-2">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                    <span>नया समाचार व खबर प्रकाशित करें</span>
+                </button>
+                <button id="tabBtnTicker" onclick="switchAdminTab('ticker')" class="pb-2 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 flex items-center gap-2">
+                    <i class="fa-solid fa-bolt"></i>
+                    <span>ताज़ा समाचार (Ticker)</span>
+                </button>
+                <button id="tabBtnPdf" onclick="switchAdminTab('pdf')" class="pb-2 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 flex items-center gap-2">
+                    <i class="fa-solid fa-file-pdf"></i>
+                    <span>ई-पेपर PDF अपलोड</span>
+                </button>
+                <button id="tabBtnManage" onclick="switchAdminTab('manage')" class="pb-2 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 flex items-center gap-2">
+                    <i class="fa-solid fa-list-check"></i>
+                    <span>सामग्री सूची (Live Records)</span>
+                </button>
+            </div>
+
+            <!-- TAB 1: NEW ARTICLE PUBLISHER FORM -->
+            <div id="adminTabPublish" class="space-y-4">
+                <form onsubmit="handlePublishArticle(event)" class="space-y-4 text-xs">
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="font-bold text-slate-700 dark:text-slate-300 mb-1 block">प्रकाशन स्थान (Section)</label>
+                            <select id="pubSection" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-semibold focus:ring-2 focus:ring-news-500">
+                                <option value="epaper">डिजिटल ई-पेपर पन्ना (E-Paper Page)</option>
+                                <option value="main">मुख्य समाचार पोर्टल (Main Headlines)</option>
+                                <option value="local">स्थानीय शहर समाचार (Local News)</option>
+                                <option value="blog">संपादकीय एवं विचार (Editorial Blog)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="font-bold text-slate-700 dark:text-slate-300 mb-1 block">ई-पेपर पृष्ठ संख्या (Page No.)</label>
+                            <select id="pubEpaperPage" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-semibold focus:ring-2 focus:ring-news-500">
+                                <option value="1">पन्ना 01 (मुख्य पृष्ठ)</option>
+                                <option value="2">पन्ना 02 (राज्य एवं प्रादेशिक)</option>
+                                <option value="3">पन्ना 03 (खेल जगत)</option>
+                                <option value="4">पन्ना 04 (व्यापार व शेयर)</option>
+                                <option value="5">पन्ना 05 (विचार एवं कॉलम)</option>
+                                <option value="6">पन्ना 06 (मनोरंजन/अन्य)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="font-bold text-slate-700 dark:text-slate-300 mb-1 block">श्रेणी / टैग (Category)</label>
+                            <select id="pubCategory" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-semibold focus:ring-2 focus:ring-news-500">
+                                <option value="national">राष्ट्रीय (National)</option>
+                                <option value="tech">तकनीक (Tech)</option>
+                                <option value="sports">खेल (Sports)</option>
+                                <option value="business">कारोबार (Business)</option>
+                                <option value="local">स्थानीय (Local)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="font-bold text-slate-700 dark:text-slate-300 mb-1 block">संपादकीय संस्करण (Edition)</label>
+                            <select id="pubEdition" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-semibold focus:ring-2 focus:ring-news-500">
+                                <option value="bareilly">बरेली नगर</option>
+                                <option value="lucknow">लखनऊ</option>
+                                <option value="delhi">दिल्ली NCR</option>
+                                <option value="patna">पटना</option>
+                                <option value="varanasi">वाराणसी</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="font-bold text-slate-700 dark:text-slate-300 mb-1 block">संवाददाता / लेखक का नाम</label>
+                            <input type="text" id="pubAuthor" required placeholder="उदा: विशेष संवाददाता, बरेली" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-news-500">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="font-bold text-slate-700 dark:text-slate-300 mb-1 block">समाचार का मुख्य शीर्षक (Title)</label>
+                        <input type="text" id="pubTitle" required placeholder="खबर का प्रभावशाली शीर्षक दर्ज करें..." class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-news-500">
+                    </div>
+
+                    <div>
+                        <label class="font-bold text-slate-700 dark:text-slate-300 mb-1 block">समाचार का संक्षिप्त विवरण (Excerpt)</label>
+                        <textarea id="pubExcerpt" required rows="2" placeholder="खबर का संक्षिप्त विवरण (100-150 शब्द)..." class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-news-500"></textarea>
+                    </div>
+
+                    <div>
+                        <label class="font-bold text-slate-700 dark:text-slate-300 mb-1 block">समाचार का पूरा विवरण (Full Body)</label>
+                        <textarea id="pubBody" required rows="4" placeholder="खबर का पूरा विस्तृत विवरण यहाँ लिखें..." class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-news-500"></textarea>
+                    </div>
+
+                    <div>
+                        <label class="font-bold text-slate-700 dark:text-slate-300 mb-1 block">छवि अपलोड करें (Image Upload)</label>
+                        <div class="flex gap-2">
+                            <input type="file" id="pubImageFile" accept="image/*" onchange="previewSelectedImage(event)" class="flex-1 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs">
+                            <input type="text" id="pubImageUrl" placeholder="या छवि URL दर्ज करें..." class="flex-1 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                        </div>
+                        <div id="imagePreviewContainer" class="hidden mt-2">
+                            <img id="imagePreviewElement" class="w-32 h-32 rounded-lg object-cover border border-slate-300">
+                            <button type="button" onclick="clearImagePreview()" class="ml-2 text-rose-600 text-xs font-bold hover:underline">हटाएं</button>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end gap-3 pt-2">
+                        <button type="button" onclick="closeAdminPanelModal()" class="px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs transition">रद्द करें</button>
+                        <button type="submit" class="px-6 py-2 rounded-xl bg-news-600 hover:bg-news-700 text-white font-bold text-xs transition shadow">प्रकाशित करें (Publish)</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- TAB 2: TICKER MANAGEMENT -->
+            <div id="adminTabTicker" class="hidden space-y-4">
+                <form onsubmit="handleAddTickerItem(event)" class="space-y-3 text-xs">
+                    <div>
+                        <label class="font-bold text-slate-700 dark:text-slate-300 mb-1 block">नया ताज़ा समाचार जोड़ें</label>
+                        <input type="text" id="tickerInputText" required placeholder="ताज़ा समाचार का शीर्षक दर्ज करें..." class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-news-500">
+                    </div>
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-news-600 hover:bg-news-700 text-white font-bold text-xs transition">जोड़ें (Add)</button>
+                </form>
+
+                <div class="border-t border-slate-200 dark:border-slate-800 pt-3">
+                    <h4 class="font-bold text-sm text-slate-800 dark:text-slate-100 mb-2">वर्तमान टिकर आइटम्स</h4>
+                    <div id="adminTickerItemsList" class="space-y-2 max-h-48 overflow-y-auto">
+                        <!-- Dynamic ticker items -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: PDF UPLOAD -->
+            <div id="adminTabPdf" class="hidden space-y-4">
+                <form onsubmit="handleUploadEpaperPdf(event)" class="space-y-3 text-xs">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="font-bold text-slate-700 dark:text-slate-300 mb-1 block">संस्करण (Edition)</label>
+                            <select id="pdfEdition" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-semibold">
+                                <option value="bareilly">बरेली नगर</option>
+                                <option value="lucknow">लखनऊ</option>
+                                <option value="delhi">दिल्ली NCR</option>
+                                <option value="patna">पटना</option>
+                                <option value="varanasi">वाराणसी</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="font-bold text-slate-700 dark:text-slate-300 mb-1 block">तारीख (Date)</label>
+                            <input type="date" id="pdfDate" value="2026-09-15" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="font-bold text-slate-700 dark:text-slate-300 mb-1 block">PDF फाइल चुनें</label>
+                        <input type="file" id="pdfFile" accept="application/pdf" onchange="handlePdfFileSelect(event)" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                    </div>
+                    <div id="pdfSelectedInfo" class="hidden p-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800">
+                        <p class="font-bold text-emerald-800 dark:text-emerald-300 text-xs">चयनित फाइल: <span id="pdfFileNameText"></span></p>
+                        <p class="text-[10px] text-emerald-600 dark:text-emerald-400">आकार: <span id="pdfFileSizeText"></span></p>
+                    </div>
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-news-600 hover:bg-news-700 text-white font-bold text-xs transition">अपलोड करें (Upload)</button>
+                </form>
+            </div>
+
+            <!-- TAB 4: MANAGE CONTENT -->
+            <div id="adminTabManage" class="hidden space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
+                    <h4 class="font-bold text-sm text-slate-800 dark:text-slate-100">प्रकाशित सामग्री सूची</h4>
+                    <span id="recordCountBadge" class="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400">0 लेख</span>
+                </div>
+                <div id="adminArticlesList" class="space-y-2 max-h-64 overflow-y-auto">
+                    <!-- Dynamic articles list -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PDF VIEWER MODAL -->
+    <div id="pdfViewerModal" class="hidden fixed inset-0 z-50 bg-slate-950/90 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 max-w-4xl w-full rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 p-4 relative max-h-[90vh] overflow-hidden flex flex-col">
+            <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 mb-3">
+                <h3 id="pdfViewerTitle" class="text-lg font-bold text-slate-800 dark:text-slate-100">डिजिटल ई-पेपर PDF</h3>
+                <button onclick="closePdfViewerModal()" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <iframe id="pdfIframe" class="flex-grow w-full rounded-lg border border-slate-300 dark:border-slate-700"></iframe>
+        </div>
+    </div>
+
+    <!-- ARTICLE READER MODAL -->
+    <div id="articleModal" class="hidden fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white dark:bg-slate-900 max-w-3xl w-full rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 p-6 relative max-h-[92vh] overflow-y-auto my-auto text-slate-800 dark:text-slate-100">
+            
+            <button onclick="closeArticleModal()" class="absolute top-5 right-5 w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 flex items-center justify-center transition">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <div class="space-y-4">
+                <div>
+                    <span id="modalCategoryTag" class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-news-100 dark:bg-news-950 text-news-700 dark:text-news-400 uppercase tracking-wider">विशेष समाचार</span>
+                </div>
+                <h2 id="modalArticleTitle" class="text-2xl sm:text-3xl font-bold font-hindi-serif leading-tight">समाचार शीर्षक</h2>
+                <div class="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 pb-3">
+                    <span><i class="fa-solid fa-user-pen mr-1"></i> <span id="modalArticleAuthor">संवाददाता</span></span>
+                    <span><i class="fa-solid fa-clock mr-1"></i> <span id="modalArticleTime">15 सितंबर 2026</span></span>
+                </div>
+
+                <div id="modalImageContainer" class="hidden">
+                    <img id="modalArticleImage" class="w-full rounded-xl shadow-lg" alt="">
+                </div>
+
+                <div id="modalArticleBody" class="text-sm leading-relaxed space-y-3">
+                    <p class="text-lg font-bold text-slate-800 dark:text-slate-200">समाचार का संक्षिप्त विवरण यहाँ प्रदर्शित होगा...</p>
+                    <p>समाचार का पूरा विस्तृत विवरण यहाँ प्रदर्शित होगा...</p>
+                </div>
+
+                <!-- Article Actions -->
+                <div class="flex flex-wrap gap-2 pt-4 border-t border-slate-200 dark:border-slate-800">
+                    <button onclick="toggleAudioReader()" class="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition">
+                        <i id="ttsIcon" class="fa-solid fa-volume-high"></i>
+                        <span id="ttsText">खबर सुनें (Audio)</span>
+                    </button>
+                    <button onclick="toggleBookmarkCurrentArticle()" class="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition">
+                        <i class="fa-solid fa-bookmark"></i>
+                        <span>सेव करें</span>
+                    </button>
+                    <button onclick="shareArticleSim()" class="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition">
+                        <i class="fa-solid fa-share-nodes"></i>
+                        <span>शेयर करें</span>
+                    </button>
+                    <button onclick="printArticleSim()" class="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition">
+                        <i class="fa-solid fa-print"></i>
+                        <span>प्रिंट</span>
+                    </button>
+                    <div class="flex items-center gap-1 ml-auto">
+                        <button onclick="adjustArticleFontSize(-1)" class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold hover:bg-slate-200 dark:hover:bg-slate-700">A-</button>
+                        <button onclick="adjustArticleFontSize(1)" class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold hover:bg-slate-200 dark:hover:bg-slate-700">A+</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BOOKMARKS MODAL -->
+    <div id="bookmarksModal" class="hidden fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 max-w-md w-full rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 p-6 relative">
+            <button onclick="closeBookmarksModal()" class="absolute top-5 right-5 w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 flex items-center justify-center transition">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <h3 class="text-xl font-bold text-slate-800 dark:text-slate-100 mb-4">सेव की गई खबरें</h3>
+            <div id="bookmarksList" class="space-y-2 max-h-64 overflow-y-auto">
+                <!-- Dynamic bookmarks -->
+            </div>
+            <button onclick="clearAllBookmarks()" class="mt-4 w-full py-2 rounded-xl bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 font-bold text-xs hover:bg-rose-200 dark:hover:bg-rose-900/50 transition">सभी हटाएं</button>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div id="toastContainer" class="fixed bottom-4 right-4 z-50 space-y-2"></div>
+
+    <script>
+        // GLOBAL STATE & CONFIGURATION
+        let isAdminLoggedIn = false;
+        let activeEdition = 'bareilly';
+        let activeEpaperPage = 1;
+        let epaperZoomLevel = 1.0;
+        let currentFontSizeLevel = 16;
+        let isAudioPlaying = false;
+        let currentModalArticle = null;
+        let savedBookmarks = [];
+        let uploadedSelectedImageBase64 = null;
+        let uploadedSelectedPdfBase64 = null;
+        let uploadedSelectedPdfName = '';
+
+        // API Configuration
+        const API_BASE_URL = 'http://localhost:3000/api';
+        const BASE_URL = 'http://localhost:3000';
+        
+        // Local fallback data
+        window.cloudPublishedArticles = [];
+        window.liveTickers = [];
+        window.uploadedEpaperPdfMap = {};
+
+        // DEFAULT E-PAPER DATA
+        const defaultEpaperPagesData = {
+            1: [
+                {
+                    id: 'ep-101',
+                    page: 1,
+                    section: 'epaper',
+                    colSpan: 'md:col-span-6',
+                    badge: 'रोजगार',
+                    badgeColor: 'bg-blue-100 text-blue-800',
+                    title: 'युवाओं के लिए भव्य रोजगार मेला कल आईटीआई परिसर में',
+                    excerpt: 'जिला कौशल विकास मिशन एवं आईटीआई बरेली के तत्वावधान में कल मेगा जॉब फेयर का आयोजन होगा...',
+                    body: 'जिला प्रशासन द्वारा युवाओं को आत्मनिर्भर बनाने हेतु रोजगार मेले का आयोजन किया जा रहा है। इसमें 25 से अधिक राष्ट्रीय एवं बहुराष्ट्रीय कंपनियां भाग लेंगी तथा 1,500 से अधिक पदों पर सीधी भर्ती की जाएगी।',
+                    author: 'कार्यालय संवाददाता',
+                    time: '15 सितंबर 2026 • पृष्ठ 01',
+                    image: 'https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=800&q=80'
+                },
+                {
+                    id: 'ep-102',
+                    page: 1,
+                    section: 'epaper',
+                    colSpan: 'md:col-span-4',
+                    badge: 'रोजगार',
+                    badgeColor: 'bg-blue-100 text-blue-800',
+                    title: 'युवाओं के लिए भव्य रोजगार मेला कल आईटीआई परिसर में',
+                    excerpt: 'जिला कौशल विकास मिशन एवं आईटीआई बरेली के तत्वावधान में कल मेगा जॉब फेयर का आयोजन होगा...',
+                    body: 'जिला प्रशासन द्वारा युवाओं को आत्मनिर्भर बनाने हेतु रोजगार मेले का आयोजन किया जा रहा है। इसमें 25 से अधिक राष्ट्रीय एवं बहुराष्ट्रीय कंपनियां भाग लेंगी तथा 1,500 से अधिक पदों पर सीधी भर्ती की जाएगी।',
+                    author: 'कार्यालय संवाददाता',
+                    time: '15 सितंबर 2026 • पृष्ठ 01',
+                    image: 'https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=800&q=80'
+                }
+            ],
+            2: [
+                {
+                    id: 'ep-201',
+                    page: 2,
+                    section: 'epaper',
+                    colSpan: 'md:col-span-12',
+                    badge: 'प्रदेश',
+                    badgeColor: 'bg-red-100 text-red-800',
+                    title: 'उत्तर प्रदेश में नए औद्योगिक एक्सप्रेस-वे नेटवर्क का विस्तार, 5 नए इंडस्ट्रियल हब स्थापित होंगे',
+                    excerpt: 'राज्य मंत्रिमंडल ने नए एमएसएमई पार्कों और लॉजिस्टिक्स हब के निर्माण को दी मंजूरी...',
+                    body: 'प्रदेश में निवेश को बढ़ावा देने के लिए राज्य सरकार ने 5 नए इंडस्ट्रियल हब बनाने की घोषणा की है। इससे लाखों नए प्रत्यक्ष और अप्रत्यक्ष रोजगार के अवसर पैदा होंगे।',
+                    author: 'राज्य ब्यूरो, लखनऊ',
+                    time: '15 सितंबर 2026 • पृष्ठ 02',
+                    image: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=800&q=80'
+                }
+            ],
+            3: [
+                {
+                    id: 'ep-301',
+                    page: 3,
+                    section: 'epaper',
+                    colSpan: 'md:col-span-12',
+                    badge: 'खेल',
+                    badgeColor: 'bg-emerald-100 text-emerald-800',
+                    title: 'एशिया कप 2026: भारतीय युवा टीम की शानदार जीत, ऑलराउंडर प्रदर्शन से विपक्ष चित',
+                    excerpt: 'धमाकेदार बल्लेबाजी और सधी हुई गेंदबाजी के बल पर भारतीय टीम ने दर्ज की ऐतिहासिक विजय...',
+                    body: 'एशियाई क्रिकेट टूर्नामेंट के रोमांचक मुकाबले में भारत ने शानदार खेल का प्रदर्शन करते हुए बड़ी जीत दर्ज की। युवा खिलाड़ियों ने अपने प्रतिभा का लोहा मनवाया।',
+                    author: 'खेल डेस्क',
+                    time: '15 सितंबर 2026 • पृष्ठ 03',
+                    image: 'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?auto=format&fit=crop&w=800&q=80'
+                }
+            ],
+            4: [
+                {
+                    id: 'ep-401',
+                    page: 4,
+                    section: 'epaper',
+                    colSpan: 'md:col-span-12',
+                    badge: 'बिज़नेस',
+                    badgeColor: 'bg-amber-100 text-amber-800',
+                    title: 'शेयर बाजार में रिकॉर्ड बढ़त, सेंसेक्स 85,000 के पार, आईटी व ऑटो शेयरों में भारी उछाल',
+                    excerpt: 'विदेशी निवेशकों की खरीदारी और बेहतर आर्थिक आंकड़ों से बाजार में जबरदस्त तेजी...',
+                    body: 'भारतीय शेयर बाजार ने आज नया इतिहास रच दिया। सेंसेक्स और निफ्टी दोनों अपने सर्वकालिक उच्च स्तर पर बंद हुए। टेक और मैन्युफैक्चरिंग सेक्टर में भारी लिवाली देखने को मिली।',
+                    author: 'कारोबार डेस्क',
+                    time: '15 सितंबर 2026 • पृष्ठ 04',
+                    image: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=800&q=80'
+                }
+            ],
+            5: [
+                {
+                    id: 'ep-501',
+                    page: 5,
+                    section: 'epaper',
+                    colSpan: 'md:col-span-12',
+                    badge: 'संपादकीय',
+                    badgeColor: 'bg-purple-100 text-purple-800',
+                    title: 'डिजिटल साक्षरता और आधुनिक पत्रकारिता: सत्य की कसौटी पर खरे उतरते विचार',
+                    excerpt: 'सूचना क्रांति के दौर में फर्जी खबरों से निपटने और जिम्मेदार पत्रकारिता का संकल्प...',
+                    body: 'आज जब हर स्मार्टफोन उपयोगकर्ता खुद में एक सूचना प्रसारक बन चुका है, तब वास्तविक पत्रकारिता की जिम्मेदारी और अधिक बढ़ जाती है। पाठकों को तथ्यपरक और निष्पक्ष समाचार पहुँचाना ही उनका सर्वोच्च धर्म है।',
+                    author: 'प्रधान संपादक',
+                    time: '15 सितंबर 2026 • पृष्ठ 05',
+                    image: 'https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&w=800&q=80'
+                }
+            ],
+            6: [
+                {
+                    id: 'ep-601',
+                    page: 6,
+                    section: 'epaper',
+                    colSpan: 'md:col-span-12',
+                    badge: 'मनोरंजन',
+                    badgeColor: 'bg-pink-100 text-pink-800',
+                    title: 'भारतीय सिनेमा का नया दौर: ओटीटी और थियेटर में बनी नई जुगलबंदी',
+                    excerpt: 'विश्वभर में भारतीय क्षेत्रीय फिल्मों और कहानियों की बढ़ती लोकप्रियता का विश्लेषण...',
+                    body: 'सिनेमा केवल मनोरंजन का साधन नहीं बल्कि समाज का दर्पण है। नई तकनीक और बेहतरीन पटकथाओं ने भारतीय फिल्मों को वैश्विक पहचान दिलाई है।',
+                    author: 'मनोरंजन डेस्क',
+                    time: '15 सितंबर 2026 • पृष्ठ 06',
+                    image: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=800&q=80'
+                }
+            ]
+        };
+
+        // DEFAULT MAIN PORTAL NEWS
+        const defaultMainNewsData = [
+            {
+                id: 'm-101',
+                category: 'national',
+                categoryLabel: 'राष्ट्रीय',
+                title: 'देशभर में डिजिटल साक्षरता अभियान का नया चरण शुरू, 5 लाख गांवों को जोड़ने का लक्ष्य',
+                excerpt: 'भारत सरकार द्वारा ग्रामीण एवं दूरदराज के क्षेत्रों में हाई-स्पीड इंटरनेट और नि:शुल्क डिजिटल ट्रेनिंग सेंटर स्थापित करने की घोषणा...',
+                author: 'राष्ट्रीय ब्यूरो, नई दिल्ली',
+                time: '15 सितंबर 2026',
+                image: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=800&q=80'
+            },
+            {
+                id: 'm-102',
+                category: 'tech',
+                categoryLabel: 'तकनीक',
+                title: 'आर्टिफिशियल इंटेलिजेंस (AI) से कृषि में क्रांति: फसलों के रोगों का समय रहते होगा सटीक निदान',
+                excerpt: 'कृषि वैज्ञानिकों और टेक विशेषज्ञों ने तैयार किया नया एआई मॉडल जो मोबाइल ऐप के माध्यम से किसानों को त्वरित परामर्श देगा...',
+                author: 'टेक डेस्क',
+                time: '15 सितंबर 2026',
+                image: 'https://images.unsplash.com/photo-1677442136019-21780efad99a?auto=format&fit=crop&w=800&q=80'
+            },
+            {
+                id: 'm-103',
+                category: 'sports',
+                categoryLabel: 'खेल',
+                title: 'विश्व एथलेटिक्स चैंपियनशिप: भारत के धावकों ने रचा नया कीर्तिमान, जीता स्वर्ण पदक',
+                excerpt: 'अंतिम क्षणों में जबरदस्त वापसी करते हुए भारतीय एथलीट ने 400 मीटर रेस में रिकॉर्ड समय के साथ पहला स्थान प्राप्त किया...',
+                author: 'स्पोर्ट्स डेस्क',
+                time: '15 सितंबर 2026',
+                image: 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&w=800&q=80'
+            }
+        ];
+
+        // LOCAL EDITION NEWS DATA
+        const localEditionData = {
+            bareilly: [
+                { title: "बरेली जंक्शन पर आधुनिक एस्केलेटर व लिफ्ट का लोकार्पण", text: "रेल यात्रियों की सुविधा के लिए ₹12 करोड़ की लागत से नई सुविधाएं शुरू की गईं।", time: "1 घंटे पहले" },
+                { title: "एमजेपी रुहेलखंड विश्वविद्यालय की परीक्षाएं अगले माह से", text: "कुलपति ने परीक्षा शेड्यूल जारी कर अधिकारियों को दिए सख्त निर्देश।", time: "3 घंटे पहले" }
+            ],
+            lucknow: [
+                { title: "लखनऊ में गोमती रिवरफ्रंट के सौंदर्यकरण का दूसरा चरण शुरू", text: "पर्यटन को बढ़ावा देने के लिए नए बोटिंग क्लब और पार्क का निर्माण होगा।", time: "2 घंटे पहले" }
+            ]
+        };
+
+        // SECURITY: Input sanitization helper
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // INITIALIZE APP ON LOAD
+        window.addEventListener('DOMContentLoaded', async () => {
+            // First fetch all data from API
+            await fetchAllDataFromAPI();
+            
+            renderEpaperPagesButtons();
+            await renderEpaperPageContent(1);
+            await renderMainNewsGrid('all');
+            renderLocalNews(activeEdition);
+            renderBlogs();
+            renderGallery();
+            await window.setupTicker();
+            updateCurrentDate();
+        });
+
+        // Fetch all data from API on page load
+        async function fetchAllDataFromAPI() {
+            try {
+                // Fetch articles
+                const articlesResponse = await fetch(`${API_BASE_URL}/articles`);
+                if (articlesResponse.ok) {
+                    const articles = await articlesResponse.json();
+                    window.cloudPublishedArticles = articles;
+                    console.log('Loaded', articles.length, 'articles from database');
+                }
+                
+                // Fetch tickers
+                const tickersResponse = await fetch(`${API_BASE_URL}/tickers`);
+                if (tickersResponse.ok) {
+                    const tickers = await tickersResponse.json();
+                    window.liveTickers = tickers.map(t => t.text);
+                    console.log('Loaded', tickers.length, 'tickers from database');
+                }
+            } catch (err) {
+                console.warn('Failed to fetch data from API on page load:', err);
+            }
+        }
+
+        function updateCurrentDate() {
+            const dateObj = new Date();
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const dateStr = dateObj.toLocaleDateString('hi-IN', options);
+            document.getElementById('currentDateDisplay').innerText = dateStr;
+            document.getElementById('epaperDateTitle').innerText = dateStr;
+        }
+
+        // Ticker Renderer - Use cached data
+        window.setupTicker = async function() {
+            const container = document.getElementById('tickerContent');
+            if (!container) return;
+            
+            // Use cached data from window.liveTickers (fetched on page load)
+            if (window.liveTickers.length === 0) {
+                // Fallback to default tickers if no data
+                window.liveTickers = [
+                    "बरेली नगर में मेट्रो प्रोजेक्ट को हरी झंडी, जल्द शुरू होगा काम",
+                    "एशिया कप 2026: भारतीय टीम ने दर्ज की शानदार जीत",
+                    "डिजिटल भारत योजना के तहत ग्रामीण इंटरनेट नेटवर्क का विस्तार",
+                    "शेयर बाजार में रिकॉर्ड उछाल, सेंसेक्स 85,000 के पार",
+                    "मौसम अपडेट: उत्तर प्रदेश में अगले 48 घंटों में हल्की बारिश के असर"
+                ];
+            }
+            
+            const items = window.liveTickers.map(h => `<span class="flex items-center gap-2"><i class="fa-solid fa-square text-[8px] text-news-500"></i> ${escapeHtml(h)}</span>`).join('');
+            container.innerHTML = items + items;
+        };
+
+        // Render Page selector buttons
+        function renderEpaperPagesButtons() {
+            const container = document.getElementById('pageSelectorButtons');
+            container.innerHTML = '';
+            for (let i = 1; i <= 6; i++) {
+                const btn = document.createElement('button');
+                btn.className = `p-2.5 rounded-xl border text-xs font-bold transition flex flex-col items-center justify-center gap-1 ${
+                    activeEpaperPage === i 
+                        ? 'border-news-600 bg-news-600 text-white shadow-md' 
+                        : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:border-news-500'
+                }`;
+                btn.onclick = () => switchEpaperPage(i);
+                btn.innerHTML = `
+                    <span>पन्ना 0${i}</span>
+                    <span class="text-[10px] opacity-80">${i === 1 ? 'मुख्य' : i === 2 ? 'राज्य' : i === 3 ? 'खेल' : i === 4 ? 'व्यापार' : i === 5 ? 'विचार' : 'मनोरंजन'}</span>
+                `;
+                container.appendChild(btn);
+            }
+        }
+
+        async function switchEpaperPage(pageNum) {
+            activeEpaperPage = pageNum;
+            document.getElementById('activePageNumText').innerText = `0${pageNum}`;
+            document.getElementById('activePageFooter').innerText = `0${pageNum}`;
+            renderEpaperPagesButtons();
+            await renderEpaperPageContent(pageNum);
+            showToast(`पन्ना 0${pageNum} लोड किया गया`);
+        }
+
+        // Render Epaper Page Articles (Includes Cloud Dynamically Uploaded Articles)
+        window.renderEpaperPageContent = async function(pageNum) {
+            const container = document.getElementById('epaperArticlesGrid');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const defaultList = defaultEpaperPagesData[pageNum] || [];
+            
+            // Use cached data from window.cloudPublishedArticles (fetched on page load)
+            const cloudList = window.cloudPublishedArticles.filter(a => a.section === 'epaper' && parseInt(a.page) === pageNum);
+            
+            const combined = [...cloudList, ...defaultList];
+
+            if (combined.length === 0) {
+                container.innerHTML = `<div class="col-span-12 py-12 text-center text-xs text-slate-500">इस पन्ने पर कोई खबर प्रकाशित नहीं है। ऊपर एडमिन पैनल से खबर जोड़ें।</div>`;
+                return;
+            }
+
+            combined.forEach(art => {
+                const card = document.createElement('div');
+                card.className = `${art.colSpan || 'md:col-span-6'} epaper-hotspot bg-white p-4 rounded-xl cursor-pointer shadow-sm group transition-all`;
+                card.onclick = () => openArticleModal(art);
+                
+                card.innerHTML = `
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="${art.badgeColor || art.badge_color || 'bg-news-100 text-news-800'} text-[10px] font-extrabold px-2 py-0.5 rounded-md uppercase tracking-wider">${escapeHtml(art.badge || art.category || 'समाचार')}</span>
+                        <span class="text-[10px] text-slate-400 font-bold"><i class="fa-solid fa-expand mr-1"></i> पढ़ें</span>
+                    </div>
+                    <h4 class="font-bold text-base sm:text-lg text-slate-900 group-hover:text-news-700 font-hindi-serif leading-snug mb-2">${escapeHtml(art.title)}</h4>
+                    <p class="text-xs text-slate-600 font-hindi-body line-clamp-3 mb-3 leading-relaxed">${escapeHtml(art.excerpt)}</p>
+                    ${art.image ? `<div class="h-36 w-full rounded-lg overflow-hidden my-2 border border-slate-200"><img src="${escapeHtml(art.image)}" class="w-full h-full object-cover group-hover:scale-105 transition-transform" alt=""></div>` : ''}
+                    <div class="flex justify-between items-center text-[10px] text-slate-500 font-semibold pt-2 border-t border-slate-100">
+                        <span><i class="fa-solid fa-feather mr-1"></i>${escapeHtml(art.author || 'संवाददाता')}</span>
+                        <span><i class="fa-solid fa-clock mr-1"></i>${escapeHtml(art.time || 'आज')}</span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        };
+
+        // Render Main News Grid
+        window.renderMainNewsGrid = async function(filter) {
+            const container = document.getElementById('mainNewsGrid');
+            if (!container) return;
+            container.innerHTML = '';
+            
+            // Use cached data from window.cloudPublishedArticles (fetched on page load)
+            const cloudMain = window.cloudPublishedArticles.filter(a => a.section === 'main');
+            
+            const allMain = [...cloudMain, ...defaultMainNewsData];
+
+            const filtered = filter === 'all' 
+                ? allMain 
+                : allMain.filter(n => n.category === filter);
+
+            filtered.forEach(news => {
+                const card = document.createElement('div');
+                card.className = 'bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-md border border-slate-200 dark:border-slate-800 hover:shadow-xl transition-all flex flex-col justify-between group cursor-pointer';
+                card.onclick = () => openArticleModal(news);
+                
+                card.innerHTML = `
+                    <div>
+                        <div class="h-48 overflow-hidden relative bg-slate-100">
+                            ${news.image ? `<img src="${escapeHtml(news.image)}" alt="" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">` : `<div class="w-full h-full flex items-center justify-center text-slate-400 font-hindi-title text-2xl">द स्पीक</div>`}
+                            <span class="absolute top-3 left-3 bg-news-600 text-white text-[10px] font-extrabold px-2.5 py-1 rounded-lg shadow uppercase">${escapeHtml(news.category || news.categoryLabel || 'विशेष')}</span>
+                        </div>
+                        <div class="p-5">
+                            <h3 class="font-bold text-lg font-hindi-serif leading-snug group-hover:text-news-600 dark:group-hover:text-news-400 transition-colors mb-2">${escapeHtml(news.title)}</h3>
+                            <p class="text-xs text-slate-600 dark:text-slate-400 font-hindi-body leading-relaxed line-clamp-3">${escapeHtml(news.excerpt)}</p>
+                        </div>
+                    </div>
+                    <div class="px-5 pb-5 pt-0 flex justify-between items-center text-[11px] text-slate-400 font-medium border-t border-slate-100 dark:border-slate-800/60 mt-2">
+                        <span><i class="fa-solid fa-user-pen mr-1"></i> ${escapeHtml(news.author || 'संवाददाता')}</span>
+                        <span class="text-news-600 font-bold hover:underline cursor-pointer">आगे पढ़ें <i class="fa-solid fa-chevron-right text-[9px]"></i></span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        };
+
+        // SECURITY & ADMIN MANAGEMENT FUNCTIONS
+        function promptAdminLogin() {
+            if (isAdminLoggedIn) {
+                openAdminPanelModal();
+            } else {
+                document.getElementById('securityModal').classList.remove('hidden');
+            }
+        }
+
+        function closeSecurityModal() {
+            document.getElementById('securityModal').classList.add('hidden');
+        }
+
+        function verifyAdminSecurity(e) {
+            e.preventDefault();
+            const pin = document.getElementById('adminPinInput').value;
+            if (pin === 'Rjkhan@231') {
+                isAdminLoggedIn = true;
+                closeSecurityModal();
+                document.getElementById('adminBadgeText').innerText = "संपादक स्टूडियो (सक्रिय)";
+                showToast("सुरक्षा पासकोड स्वीकृत! संपादक स्टूडियो अनलॉक हुआ।");
+                openAdminPanelModal();
+            } else {
+                showToast("गलत पासवर्ड! कृपया सही सुरक्षा कोड दर्ज करें।");
+            }
+        }
+
+        function openAdminPanelModal() {
+            document.getElementById('adminPanelModal').classList.remove('hidden');
+            renderAdminArticlesList();
+            renderAdminTickersList();
+        }
+
+        function closeAdminPanelModal() {
+            document.getElementById('adminPanelModal').classList.add('hidden');
+        }
+
+        function switchAdminTab(tab) {
+            ['publish', 'ticker', 'pdf', 'manage'].forEach(t => {
+                const btn = document.getElementById(`tabBtn${t.charAt(0).toUpperCase() + t.slice(1)}`);
+                const content = document.getElementById(`adminTab${t.charAt(0).toUpperCase() + t.slice(1)}`);
+                if (t === tab) {
+                    btn.classList.add('text-news-600', 'border-b-2', 'border-news-600');
+                    btn.classList.remove('text-slate-500');
+                    content.classList.remove('hidden');
+                } else {
+                    btn.classList.remove('text-news-600', 'border-b-2', 'border-news-600');
+                    btn.classList.add('text-slate-500');
+                    content.classList.add('hidden');
+                }
+            });
+        }
+
+        // IMAGE FILE UPLOAD HANDLER (Upload to server)
+        let uploadedImageUrl = null;
+
+        async function previewSelectedImage(event) {
+            const file = event.target.files[0];
+            if (file) {
+                // Show preview
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('imagePreviewElement').src = e.target.result;
+                    document.getElementById('imagePreviewContainer').classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+
+                // Upload to server
+                const formData = new FormData();
+                formData.append('image', file);
+
+                try {
+                    showToast('छवि अपलोड हो रही है...');
+                    const response = await fetch(`${API_BASE_URL}/upload-image`, {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        uploadedImageUrl = BASE_URL + data.imageUrl;
+                        showToast('छवि सफलतापूर्वक अपलोड हुई!');
+                    } else {
+                        throw new Error('Image upload failed');
+                    }
+                } catch (err) {
+                    console.error('Error uploading image:', err);
+                    showToast('छवि अपलोड में त्रुटि हुई');
+                    clearImagePreview();
+                }
+            }
+        }
+
+        function clearImagePreview() {
+            uploadedImageUrl = null;
+            uploadedSelectedImageBase64 = null;
+            document.getElementById('pubImageFile').value = '';
+            document.getElementById('imagePreviewContainer').classList.add('hidden');
+        }
+
+        // PDF FILE UPLOAD HANDLER
+        function handlePdfFileSelect(e) {
+            const file = e.target.files[0];
+            if (file) {
+                uploadedSelectedPdfName = file.name;
+                const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
+                document.getElementById('pdfFileNameText').innerText = file.name;
+                document.getElementById('pdfFileSizeText').innerText = `${sizeMb} MB`;
+                document.getElementById('pdfSelectedInfo').classList.remove('hidden');
+
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    uploadedSelectedPdfBase64 = evt.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        async function handleUploadEpaperPdf(e) {
+            e.preventDefault();
+            const edition = document.getElementById('pdfEdition').value;
+            const date = document.getElementById('pdfDate').value;
+
+            if (!uploadedSelectedPdfBase64) {
+                showToast("कृपया अपलोड करने के लिए एक PDF फाइल चुनें!");
+                return;
+            }
+
+            const key = `${edition}_${date}`;
+            window.uploadedEpaperPdfMap[key] = {
+                fileName: uploadedSelectedPdfName,
+                dataUrl: uploadedSelectedPdfBase64
+            };
+
+            showToast(`ई-पेपर PDF ('${uploadedSelectedPdfName}') सफलता पूर्वक अपलोड हुआ!`);
+            e.target.reset();
+            document.getElementById('pdfSelectedInfo').classList.add('hidden');
+        }
+
+        function viewUploadedEpaperPDF() {
+            const key = `${activeEdition}_2026-09-15`;
+            const pdfData = window.uploadedEpaperPdfMap[key];
+
+            if (pdfData && pdfData.dataUrl) {
+                document.getElementById('pdfIframe').src = pdfData.dataUrl;
+                document.getElementById('pdfViewerTitle').innerText = `डिजिटल ई-पेपर: ${pdfData.fileName}`;
+                document.getElementById('pdfViewerModal').classList.remove('hidden');
+            } else {
+                showToast("इस तारीख/संस्करण की कोई विशेष PDF उपलब्ध नहीं है। डिफ़ॉल्ट डिजिटल व्यू का उपयोग करें या एडमिन से अपलोड करें।");
+            }
+        }
+
+        function closePdfViewerModal() {
+            document.getElementById('pdfViewerModal').classList.add('hidden');
+            document.getElementById('pdfIframe').src = '';
+        }
+
+        // PUBLISH ARTICLE (PostgreSQL API)
+        async function handlePublishArticle(e) {
+            e.preventDefault();
+
+            const submitButton = e.target.querySelector('button[type="submit"]');
+            const originalButtonText = submitButton.innerText;
+            
+            // Disable button and show loading state
+            submitButton.disabled = true;
+            submitButton.innerText = 'प्रकाशित हो रहा है...';
+
+            const section = document.getElementById('pubSection').value;
+            const page = document.getElementById('pubEpaperPage').value;
+            const category = document.getElementById('pubCategory').value;
+            const edition = document.getElementById('pubEdition').value;
+            const author = document.getElementById('pubAuthor').value;
+            const title = document.getElementById('pubTitle').value;
+            const excerpt = document.getElementById('pubExcerpt').value;
+            const body = document.getElementById('pubBody').value;
+            
+            // Use uploaded image URL first, then manual URL, then default
+            const imageUrl = uploadedImageUrl || document.getElementById('pubImageUrl').value || 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?auto=format&fit=crop&w=800&q=80';
+
+            console.log('Publishing article:', { section, page, category, edition, author, title, imageUrl });
+
+            const newArticle = {
+                section,
+                page: parseInt(page),
+                category,
+                edition,
+                author,
+                title,
+                excerpt,
+                body,
+                image: imageUrl,
+                badge: category.toUpperCase(),
+                badge_color: 'bg-rose-100 text-rose-800'
+            };
+
+            // Save to PostgreSQL API
+            try {
+                console.log('Sending to API:', API_BASE_URL + '/articles');
+                const response = await fetch(`${API_BASE_URL}/articles`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newArticle)
+                });
+                
+                console.log('API Response status:', response.status);
+                
+                if (response.ok) {
+                    const savedArticle = await response.json();
+                    console.log('Saved article:', savedArticle);
+                    // Refresh data from database
+                    await fetchAllDataFromAPI();
+                    window.renderEpaperPageContent(window.activeEpaperPage);
+                    window.renderMainNewsGrid('all');
+                    window.renderAdminArticlesList();
+                    showToast("समाचार PostgreSQL डेटाबेस में सफलतापूर्वक प्रकाशित हुआ!");
+                    
+                    // Reset form and close modal
+                    e.target.reset();
+                    clearImagePreview();
+                    closeAdminPanelModal();
+                } else {
+                    const errorData = await response.json();
+                    console.error('API Error:', errorData);
+                    throw new Error(errorData.error || 'Failed to publish article');
+                }
+            } catch (err) {
+                console.error("API Save failed, saving locally:", err);
+                showToast("API त्रुटि: " + err.message + " - स्थानीय रूप से सहेज रहा हूँ");
+                // Fallback to local storage
+                newArticle.id = 'loc-' + Date.now();
+                newArticle.time = new Date().toLocaleDateString('hi-IN') + ' • हालिया';
+                window.cloudPublishedArticles.unshift(newArticle);
+                window.renderEpaperPageContent(window.activeEpaperPage);
+                window.renderMainNewsGrid('all');
+            } finally {
+                // Re-enable button
+                submitButton.disabled = false;
+                submitButton.innerText = originalButtonText;
+            }
+        }
+
+        // TICKER MANAGEMENT (PostgreSQL API)
+        async function handleAddTickerItem(e) {
+            e.preventDefault();
+            const txt = document.getElementById('tickerInputText').value.trim();
+            
+            if (!txt) {
+                showToast("कृपया टिकर टेक्स्ट दर्ज करें");
+                return;
+            }
+
+            const submitButton = e.target.querySelector('button[type="submit"]');
+            const originalButtonText = submitButton.innerText;
+            
+            // Disable button and show loading state
+            submitButton.disabled = true;
+            submitButton.innerText = 'जोड़ा जा रहा है...';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/tickers`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: txt })
+                });
+                
+                if (response.ok) {
+                    // Refresh data from database
+                    await fetchAllDataFromAPI();
+                    window.setupTicker();
+                    window.renderAdminTickersList();
+                    showToast("नया ताज़ा समाचार टिकर में जोड़ा गया!");
+                    e.target.reset();
+                } else {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to add ticker');
+                }
+            } catch (err) {
+                console.warn("API Save failed, saving locally:", err);
+                showToast("API त्रुटि: " + err.message + " - स्थानीय रूप से जोड़ रहा हूँ");
+                window.liveTickers.unshift(txt);
+                window.setupTicker();
+                window.renderAdminTickersList();
+                e.target.reset();
+            } finally {
+                // Re-enable button
+                submitButton.disabled = false;
+                submitButton.innerText = originalButtonText;
+            }
+        }
+
+        async function renderAdminTickersList() {
+            const container = document.getElementById('adminTickerItemsList');
+            if (!container) return;
+            container.innerHTML = '';
+            
+            // Use cached data from window.liveTickers (fetched on page load)
+            window.liveTickers.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'flex justify-between items-center p-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs';
+                div.innerHTML = `
+                    <span class="font-medium text-slate-800 dark:text-slate-200">${escapeHtml(item)}</span>
+                    <button onclick="removeTickerItem(${index}, '${item}')" class="ticker-delete-btn text-rose-600 hover:text-rose-800 font-bold text-xs p-1"><i class="fa-solid fa-trash"></i></button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        async function removeTickerItem(index, text) {
+            // Show confirmation dialog
+            if (!confirm('क्या आप वाकई इस टिकर को हटाना चाहते हैं?')) {
+                return;
+            }
+
+            // Disable delete button to prevent duplicate actions
+            const deleteButtons = document.querySelectorAll('button[onclick^="removeTickerItem"]');
+            deleteButtons.forEach(btn => btn.disabled = true);
+
+            try {
+                // Fetch all tickers to get the ID
+                const response = await fetch(`${API_BASE_URL}/tickers`);
+                const tickers = await response.json();
+                const tickerToDelete = tickers.find(t => t.text === text);
+                
+                if (tickerToDelete && tickerToDelete.id) {
+                    const deleteResponse = await fetch(`${API_BASE_URL}/tickers/${tickerToDelete.id}`, { method: 'DELETE' });
+                    
+                    if (!deleteResponse.ok) {
+                        const errorData = await deleteResponse.json();
+                        throw new Error(errorData.error || 'Failed to delete ticker');
+                    }
+                    
+                    // Refresh data from database to ensure frontend state is updated
+                    await fetchAllDataFromAPI();
+                } else {
+                    // Remove from local storage
+                    window.liveTickers = window.liveTickers.filter(t => t !== text);
+                }
+                
+                window.setupTicker();
+                renderAdminTickersList();
+                showToast("टिकर आइटम हटाया गया!");
+            } catch (error) {
+                console.error('Ticker delete failed:', error);
+                showToast("टिकर हटाने में त्रुटि: " + error.message);
+            } finally {
+                // Re-enable delete buttons
+                deleteButtons.forEach(btn => btn.disabled = false);
+            }
+        }
+
+        // RENDER ADMIN ARTICLES MANAGEMENT TABLE
+        window.renderAdminArticlesList = async function() {
+            const container = document.getElementById('adminArticlesList');
+            const countBadge = document.getElementById('recordCountBadge');
+            if (!container) return;
+            
+            // Use cached data from window.cloudPublishedArticles
+            const articles = window.cloudPublishedArticles;
+            
+            container.innerHTML = '';
+            countBadge.innerText = `${articles.length} लेख`;
+
+            if (articles.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 text-center py-6">कोई क्लाउड लेख उपलब्ध नहीं है। पहला लेख प्रकाशित करें!</p>`;
+                return;
+            }
+
+            articles.forEach((art) => {
+                const div = document.createElement('div');
+                div.className = 'p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 flex items-center justify-between text-xs gap-3';
+                div.innerHTML = `
+                    <div class="flex items-center gap-3 overflow-hidden">
+                        ${art.image ? `<img src="${escapeHtml(art.image)}" class="w-10 h-10 rounded-lg object-cover shrink-0">` : ''}
+                        <div class="truncate">
+                            <h5 class="font-bold text-slate-900 dark:text-slate-100 truncate">${escapeHtml(art.title)}</h5>
+                            <p class="text-[10px] text-slate-400">विभाग: ${escapeHtml(art.section)} • पृष्ठ: 0${art.page || 1} • ${escapeHtml(art.time || '')}</p>
+                        </div>
+                    </div>
+                    <button onclick="deletePublishedArticle('${art.id}')" class="delete-btn text-rose-600 hover:bg-rose-100 dark:hover:bg-rose-950 p-2 rounded-lg font-bold text-xs shrink-0 transition" title="हटाएं">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                `;
+                container.appendChild(div);
+            });
+        };
+
+        async function deletePublishedArticle(docId) {
+            // Show confirmation dialog
+            if (!confirm('क्या आप वाकई इस समाचार को हटाना चाहते हैं? यह कार्रवाई पूर्ववत नहीं की जा सकती।')) {
+                return;
+            }
+
+            // Disable delete button to prevent duplicate actions
+            const deleteButtons = document.querySelectorAll('button[onclick^="deletePublishedArticle"]');
+            deleteButtons.forEach(btn => btn.disabled = true);
+
+            try {
+                // Check if it's a database ID (numeric) or local ID (string with 'loc-' prefix)
+                const isDatabaseId = !isNaN(docId) && docId.toString() !== 'loc-' && !docId.toString().startsWith('loc-');
+                
+                if (isDatabaseId) {
+                    // Delete from PostgreSQL API
+                    const response = await fetch(`${API_BASE_URL}/articles/${docId}`, { method: 'DELETE' });
+                    
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || 'Failed to delete article');
+                    }
+                    
+                    // Refresh data from database to ensure frontend state is updated
+                    await fetchAllDataFromAPI();
+                } else {
+                    // Remove from local storage
+                    window.cloudPublishedArticles = window.cloudPublishedArticles.filter(a => a.id !== docId);
+                }
+
+                // Update all UI components
+                window.renderEpaperPageContent(window.activeEpaperPage);
+                window.renderMainNewsGrid('all');
+                window.renderAdminArticlesList();
+                
+                showToast("समाचार सफलतापूर्वक हटाया गया!");
+            } catch (error) {
+                console.error('Delete failed:', error);
+                showToast("हटाने में त्रुटि: " + error.message);
+            } finally {
+                // Re-enable delete buttons
+                deleteButtons.forEach(btn => btn.disabled = false);
+            }
+        }
+
+        // ARTICLE MODAL & READER LOGIC
+        function openArticleModal(article) {
+            currentModalArticle = article;
+            
+            document.getElementById('modalArticleTitle').innerText = article.title;
+            document.getElementById('modalArticleAuthor').innerText = article.author || 'संवाददाता';
+            document.getElementById('modalArticleTime').innerText = article.time || '15 सितंबर 2026';
+            document.getElementById('modalCategoryTag').innerText = article.badge || article.categoryLabel || article.category || 'विशेष समाचार';
+            
+            const imgBox = document.getElementById('modalImageContainer');
+            if (article.image) {
+                imgBox.classList.remove('hidden');
+                document.getElementById('modalArticleImage').src = article.image;
+            } else {
+                imgBox.classList.add('hidden');
+            }
+
+            document.getElementById('modalArticleBody').innerHTML = `
+                <p class="text-lg font-bold text-slate-800 dark:text-slate-200 mb-3 leading-snug">${article.excerpt || ''}</p>
+                <p>${article.body || article.excerpt || 'संवाददाता से मिली जानकारी के अनुसार विस्तृत विवरण तैयार किया जा रहा है।'}</p>
+            `;
+
+            document.getElementById('articleModal').classList.remove('hidden');
+            stopAudioReader();
+        }
+
+        function closeArticleModal() {
+            document.getElementById('articleModal').classList.add('hidden');
+            stopAudioReader();
+        }
+
+        // Text-to-Speech Hindi Audio Reader
+        function toggleAudioReader() {
+            if ('speechSynthesis' in window) {
+                if (isAudioPlaying) {
+                    stopAudioReader();
+                } else {
+                    const textToRead = `${currentModalArticle.title}. ${currentModalArticle.excerpt || ''}`;
+                    const utterance = new SpeechSynthesisUtterance(textToRead);
+                    utterance.lang = 'hi-IN';
+                    utterance.rate = 0.9;
+                    utterance.onend = () => stopAudioReader();
+
+                    window.speechSynthesis.speak(utterance);
+                    isAudioPlaying = true;
+                    document.getElementById('ttsIcon').className = 'fa-solid fa-circle-stop text-rose-500 animate-pulse';
+                    document.getElementById('ttsText').innerText = 'रोकें (Stop)';
+                    showToast('वॉइस रीडर चालू है...');
+                }
+            } else {
+                showToast('आपके ब्राउज़र में वॉइस रीडर समर्थित नहीं है।');
+            }
+        }
+
+        function stopAudioReader() {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+            isAudioPlaying = false;
+            const icon = document.getElementById('ttsIcon');
+            const txt = document.getElementById('ttsText');
+            if (icon && txt) {
+                icon.className = 'fa-solid fa-volume-high';
+                txt.innerText = 'खबर सुनें (Audio)';
+            }
+        }
+
+        function adjustArticleFontSize(delta) {
+            currentFontSizeLevel = Math.max(12, Math.min(24, currentFontSizeLevel + delta));
+            document.getElementById('modalArticleBody').style.fontSize = `${currentFontSizeLevel}px`;
+        }
+
+        // BOOKMARKS SYSTEM
+        function toggleBookmarkCurrentArticle() {
+            if (!currentModalArticle) return;
+            const idx = savedBookmarks.findIndex(b => b.title === currentModalArticle.title);
+            if (idx >= 0) {
+                savedBookmarks.splice(idx, 1);
+                showToast('खबर सेव की गई सूची से हटा दी गई।');
+            } else {
+                savedBookmarks.push(currentModalArticle);
+                showToast('खबर सफलता पूर्वक सेव हो गई!');
+            }
+            document.getElementById('bookmarkCount').innerText = savedBookmarks.length;
+        }
+
+        function openBookmarksModal() {
+            const container = document.getElementById('bookmarksList');
+            container.innerHTML = '';
+            if (savedBookmarks.length === 0) {
+                container.innerHTML = '<p class="text-xs text-slate-500 text-center py-8">कोई खबर सेव नहीं की गई है।</p>';
+            } else {
+                savedBookmarks.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs space-y-1';
+                    div.innerHTML = `<h4 class="font-bold text-slate-800 dark:text-slate-100">${escapeHtml(item.title)}</h4>`;
+                    container.appendChild(div);
+                });
+            }
+            document.getElementById('bookmarksModal').classList.remove('hidden');
+        }
+
+        function closeBookmarksModal() {
+            document.getElementById('bookmarksModal').classList.add('hidden');
+        }
+
+        function clearAllBookmarks() {
+            savedBookmarks = [];
+            document.getElementById('bookmarkCount').innerText = '0';
+            openBookmarksModal();
+            showToast('सभी सेव खबरें हटा दी गईं।');
+        }
+
+        // OTHER INTERACTIVITY
+        function zoomEpaper(action) {
+            const canvas = document.getElementById('epaperCanvasContainer');
+            if (action === 'in' && epaperZoomLevel < 1.4) epaperZoomLevel += 0.1;
+            if (action === 'out' && epaperZoomLevel > 0.8) epaperZoomLevel -= 0.1;
+            canvas.style.transform = `scale(${epaperZoomLevel})`;
+        }
+
+        function resetZoomEpaper() {
+            epaperZoomLevel = 1.0;
+            document.getElementById('epaperCanvasContainer').style.transform = `scale(1.0)`;
+        }
+
+        function loadEpaperByDate() {
+            const val = document.getElementById('epaperDatePicker').value;
+            showToast(`दिनांक ${val} का डिजिटल ई-पेपर लोड हो रहा है...`);
+        }
+
+        function downloadEpaperPDFSim() {
+            showToast('ई-पेपर पीडीएफ (PDF) डाउनलोड शुरू हो रहा है...');
+        }
+
+        function changeEdition(editionKey) {
+            activeEdition = editionKey;
+            document.getElementById('editionSelect').value = editionKey;
+            const nameMap = { bareilly: 'बरेली नगर', lucknow: 'लखनऊ', delhi: 'दिल्ली NCR', patna: 'पटना', varanasi: 'वाराणसी' };
+            const name = nameMap[editionKey] || 'बरेली नगर';
+            document.getElementById('topEditionLabel').innerText = name;
+            document.getElementById('epaperEditionTitle').innerText = `${name} संस्करण`;
+            document.getElementById('localEditionHeader').innerText = name;
+            renderLocalNews(editionKey);
+            showToast(`संस्करण बदलकर '${name}' किया गया`);
+        }
+
+        function renderLocalNews(editionKey) {
+            const container = document.getElementById('localNewsGrid');
+            container.innerHTML = '';
+            const items = localEditionData[editionKey] || localEditionData.bareilly;
+            items.forEach((item, idx) => {
+                const card = document.createElement('div');
+                card.className = 'bg-slate-800/80 rounded-xl p-4 border border-slate-700 hover:border-news-500 transition cursor-pointer';
+                card.onclick = () => openArticleModal({ title: item.title, excerpt: item.text, author: "स्थानीय संवाददाता", time: item.time });
+                card.innerHTML = `
+                    <span class="text-[10px] font-bold text-amber-400 uppercase tracking-wider mb-1 block">खबर ${idx+1}</span>
+                    <h4 class="font-bold text-sm text-white mb-1 leading-snug hover:text-news-400">${escapeHtml(item.title)}</h4>
+                    <p class="text-xs text-slate-300 line-clamp-2 leading-relaxed mb-3">${escapeHtml(item.text)}</p>
+                    <span class="text-[10px] text-slate-400"><i class="fa-solid fa-clock mr-1"></i>${escapeHtml(item.time)}</span>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        async function filterNewsCategory(cat) {
+            document.querySelectorAll('.news-cat-btn').forEach(btn => {
+                btn.classList.remove('bg-news-600', 'text-white');
+                btn.classList.add('bg-slate-200', 'dark:bg-slate-800', 'text-slate-700', 'dark:text-slate-300');
+            });
+            event.target.classList.remove('bg-slate-200', 'dark:bg-slate-800', 'text-slate-700', 'dark:text-slate-300');
+            event.target.classList.add('bg-news-600', 'text-white');
+            await window.renderMainNewsGrid(cat);
+        }
+
+        function renderBlogs() {
+            const container = document.getElementById('blogsContainer');
+            container.innerHTML = `
+                <div class="p-5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2">
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-purple-100 text-purple-800">विशेष विचार</span>
+                    <h3 class="font-bold text-base text-slate-900 dark:text-slate-100">डिजिटल युग में सत्य और पत्रकारिता की बदलती चुनौतियाँ</h3>
+                    <p class="text-xs text-slate-500 font-medium">डॉ. रमेश चंद्र शर्मा, वरिष्ठ स्तंभकार • 14 सितंबर 2026</p>
+                    <p class="text-xs text-slate-600 dark:text-slate-300 font-hindi-body leading-relaxed">सूचना क्रांति के दौर में त्वरित समाचार और तथ्यपरक रिपोर्टिंग के बीच संतुलन बनाए रखना सबसे बड़ा सवाल है...</p>
+                </div>
+            `;
+        }
+
+        function renderGallery() {
+            const container = document.getElementById('mediaGalleryGrid');
+            const media = [
+                { title: "बरेली स्मार्ट सिटी परियोजना का दृश्य", image: "https://images.unsplash.com/photo-1477959858617-67f30ac4ce78?auto=format&fit=crop&w=600&q=80" },
+                { title: "कृषि विज्ञान मेले में नई तकनीक", image: "https://images.unsplash.com/photo-1595974482597-4b8da8879bc5?auto=format&fit=crop&w=600&q=80" }
+            ];
+            container.innerHTML = media.map(m => `
+                <div class="rounded-xl overflow-hidden relative group cursor-pointer shadow border border-slate-200 dark:border-slate-800">
+                    <div class="h-40 w-full overflow-hidden"><img src="${escapeHtml(m.image)}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"></div>
+                    <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-transparent flex flex-col justify-end p-3 text-white">
+                        <p class="text-xs font-bold leading-tight">${escapeHtml(m.title)}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateHoroscope(val) {
+            showToast(`राशिफल अद्यतन: ${val}`);
+        }
+
+        function castVote(opt) {
+            showToast("जनमत सर्वेक्षण में आपका वोट दर्ज किया गया!");
+        }
+
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+            const icon = document.getElementById('themeIcon');
+            if (document.documentElement.classList.contains('dark')) {
+                icon.className = 'fa-solid fa-sun text-amber-300';
+                showToast('डार्क मोड एक्टिव');
+            } else {
+                icon.className = 'fa-solid fa-moon';
+                showToast('लाइट मोड एक्टिव');
+            }
+        }
+
+        function handleSearchKey(e) { if (e.key === 'Enter') executeSearch(); }
+        function executeSearch() {
+            const query = document.getElementById('searchInput').value.trim();
+            if (query) showToast(`'${escapeHtml(query)}' के लिए खोज परिणाम...`);
+        }
+
+        function handleNewsletterSubmit(e) { e.preventDefault(); showToast('न्यूज़लेटर सदस्य बनने के लिए धन्यवाद!'); e.target.reset(); }
+        function shareArticleSim() { if (navigator.clipboard) navigator.clipboard.writeText(window.location.href); showToast('खबर का लिंक कॉपी हो गया है!'); }
+        function printArticleSim() { window.print(); }
+        function openContactModal() { showToast('न्यूज़ डेस्क संपर्क: 1800-SPEAK-NEWS | contact@thespeaknews.com'); }
+
+        function showToast(msg) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = 'bg-slate-900 text-white border-l-4 border-news-500 px-4 py-3 rounded-xl shadow-2xl text-xs font-bold flex items-center gap-2 transition-all';
+            toast.innerHTML = `<i class="fa-solid fa-circle-info text-news-500"></i> <span>${escapeHtml(msg)}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3000);
+        }
+    </script>
+</body>
+</html>
