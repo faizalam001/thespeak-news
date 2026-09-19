@@ -214,8 +214,8 @@
                     <a href="#gallery" class="hover:text-news-400 transition whitespace-nowrap px-2 py-1"><i class="fa-solid fa-camera mr-1 text-pink-400"></i> फोटो / वीडियो</a>
                 </div>
 
-                <div class="hidden lg:flex items-center text-xs font-bold text-amber-400 gap-2 shrink-0 pl-4 border-l border-slate-800">
-                    <i class="fa-solid fa-cloud-arrow-up text-emerald-400"></i>
+                <div class="hidden lg:flex items-center text-xs font-bold gap-2 shrink-0 pl-4 border-l border-slate-800">
+                    <i id="cloudSyncIcon" class="fa-solid fa-cloud-arrow-up text-emerald-400"></i>
                     <span id="cloudSyncStatus">लाइव क्लाउड सिंक: सक्रिय</span>
                 </div>
             </div>
@@ -862,13 +862,14 @@
         let uploadedSelectedPdfBase64 = null;
         let uploadedSelectedPdfName = '';
 
-        // API Configuration
-        const API_BASE_URL = 'http://localhost:3000/api';
-        const BASE_URL = 'http://localhost:3000';
+        // API Configuration - Auto-detect environment
+        const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        const API_BASE_URL = isLocalhost ? 'http://localhost:3000/api' : 'https://YOUR-RENDER-URL.onrender.com/api';
+        const BASE_URL = isLocalhost ? 'http://localhost:3000' : 'https://YOUR-RENDER-URL.onrender.com';
         
         // Local fallback data
-        window.cloudPublishedArticles = [];
-        window.liveTickers = [];
+        window.cloudPublishedArticles = loadFromLocal('thespeak_articles') || [];
+        window.liveTickers = loadFromLocal('thespeak_tickers') || [];
         window.uploadedEpaperPdfMap = {};
 
         // DEFAULT E-PAPER DATA
@@ -1030,6 +1031,25 @@
             ]
         };
 
+        // LOCAL STORAGE HELPERS
+        function saveToLocal(key, data) {
+            try {
+                localStorage.setItem(key, JSON.stringify(data));
+            } catch (e) {
+                console.warn('Failed to save to localStorage:', e);
+            }
+        }
+
+        function loadFromLocal(key) {
+            try {
+                const data = localStorage.getItem(key);
+                return data ? JSON.parse(data) : null;
+            } catch (e) {
+                console.warn('Failed to load from localStorage:', e);
+                return null;
+            }
+        }
+
         // SECURITY: Input sanitization helper
         function escapeHtml(text) {
             if (!text) return '';
@@ -1056,23 +1076,54 @@
         // Fetch all data from API on page load
         async function fetchAllDataFromAPI() {
             try {
-                // Fetch articles
-                const articlesResponse = await fetch(`${API_BASE_URL}/articles`);
-                if (articlesResponse.ok) {
-                    const articles = await articlesResponse.json();
-                    window.cloudPublishedArticles = articles;
-                    console.log('Loaded', articles.length, 'articles from database');
-                }
+                // Check if API is available
+                const healthResponse = await fetch(`${API_BASE_URL}/health`, { 
+                    method: 'GET',
+                    signal: AbortSignal.timeout(5000) // 5 second timeout
+                });
                 
-                // Fetch tickers
-                const tickersResponse = await fetch(`${API_BASE_URL}/tickers`);
-                if (tickersResponse.ok) {
-                    const tickers = await tickersResponse.json();
-                    window.liveTickers = tickers.map(t => t.text);
-                    console.log('Loaded', tickers.length, 'tickers from database');
+                if (healthResponse.ok) {
+                    console.log('API server is available, fetching data...');
+                    updateCloudSyncStatus(true);
+                    
+                    // Fetch articles
+                    const articlesResponse = await fetch(`${API_BASE_URL}/articles`);
+                    if (articlesResponse.ok) {
+                        const articles = await articlesResponse.json();
+                        window.cloudPublishedArticles = articles;
+                        console.log('Loaded', articles.length, 'articles from database');
+                    }
+                    
+                    // Fetch tickers
+                    const tickersResponse = await fetch(`${API_BASE_URL}/tickers`);
+                    if (tickersResponse.ok) {
+                        const tickers = await tickersResponse.json();
+                        window.liveTickers = tickers.map(t => t.text);
+                        console.log('Loaded', tickers.length, 'tickers from database');
+                    }
+                } else {
+                    console.warn('API health check failed, using local data');
+                    updateCloudSyncStatus(false);
                 }
             } catch (err) {
-                console.warn('Failed to fetch data from API on page load:', err);
+                console.warn('API server not available, using local data only:', err.message);
+                updateCloudSyncStatus(false);
+                // Don't show toast on initial load to avoid annoying users
+            }
+        }
+
+        function updateCloudSyncStatus(isConnected) {
+            const statusElement = document.getElementById('cloudSyncStatus');
+            const iconElement = document.getElementById('cloudSyncIcon');
+            
+            if (isConnected) {
+                statusElement.innerText = 'लाइव क्लाउड सिंक: सक्रिय';
+                statusElement.className = 'text-xs font-bold text-emerald-400';
+                iconElement.className = 'fa-solid fa-cloud-arrow-up text-emerald-400';
+            } else {
+                statusElement.innerText = 'स्थानीय मोड: ऑफलाइन';
+                statusElement.className = 'text-xs font-bold text-amber-400';
+                iconElement.className = 'fa-solid fa-cloud-arrow-down text-amber-400';
             }
         }
 
@@ -1269,19 +1320,21 @@
 
         // IMAGE FILE UPLOAD HANDLER (Upload to server)
         let uploadedImageUrl = null;
+        let uploadedImageBase64 = null;
 
         async function previewSelectedImage(event) {
             const file = event.target.files[0];
             if (file) {
-                // Show preview
+                // Show preview and store base64 for fallback
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     document.getElementById('imagePreviewElement').src = e.target.result;
                     document.getElementById('imagePreviewContainer').classList.remove('hidden');
+                    uploadedImageBase64 = e.target.result; // Store for fallback
                 };
                 reader.readAsDataURL(file);
 
-                // Upload to server
+                // Try to upload to server
                 const formData = new FormData();
                 formData.append('image', file);
 
@@ -1301,14 +1354,17 @@
                     }
                 } catch (err) {
                     console.error('Error uploading image:', err);
-                    showToast('छवि अपलोड में त्रुटि हुई');
-                    clearImagePreview();
+                    showToast('API सर्वर उपलब्ध नहीं है, स्थानीय रूप से छवि का उपयोग किया जाएगा');
+                    updateCloudSyncStatus(false);
+                    // Don't clear preview - keep it for local fallback
+                    uploadedImageUrl = uploadedImageBase64; // Use base64 as fallback
                 }
             }
         }
 
         function clearImagePreview() {
             uploadedImageUrl = null;
+            uploadedImageBase64 = null;
             uploadedSelectedImageBase64 = null;
             document.getElementById('pubImageFile').value = '';
             document.getElementById('imagePreviewContainer').classList.add('hidden');
@@ -1392,7 +1448,8 @@
             const body = document.getElementById('pubBody').value;
             
             // Use uploaded image URL first, then manual URL, then default
-            const imageUrl = uploadedImageUrl || document.getElementById('pubImageUrl').value || 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?auto=format&fit=crop&w=800&q=80';
+            const manualImageUrl = document.getElementById('pubImageUrl').value;
+            const imageUrl = uploadedImageUrl || manualImageUrl || 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?auto=format&fit=crop&w=800&q=80';
 
             console.log('Publishing article:', { section, page, category, edition, author, title, imageUrl });
 
@@ -1442,13 +1499,16 @@
                 }
             } catch (err) {
                 console.error("API Save failed, saving locally:", err);
-                showToast("API त्रुटि: " + err.message + " - स्थानीय रूप से सहेज रहा हूँ");
+                showToast("API सर्वर उपलब्ध नहीं है - स्थानीय रूप से सहेज रहा हूँ");
+                updateCloudSyncStatus(false);
                 // Fallback to local storage
                 newArticle.id = 'loc-' + Date.now();
                 newArticle.time = new Date().toLocaleDateString('hi-IN') + ' • हालिया';
                 window.cloudPublishedArticles.unshift(newArticle);
+                saveToLocal('thespeak_articles', window.cloudPublishedArticles);
                 window.renderEpaperPageContent(window.activeEpaperPage);
                 window.renderMainNewsGrid('all');
+                window.renderAdminArticlesList();
             } finally {
                 // Re-enable button
                 submitButton.disabled = false;
@@ -1493,8 +1553,10 @@
                 }
             } catch (err) {
                 console.warn("API Save failed, saving locally:", err);
-                showToast("API त्रुटि: " + err.message + " - स्थानीय रूप से जोड़ रहा हूँ");
+                showToast("API सर्वर उपलब्ध नहीं है - स्थानीय रूप से जोड़ रहा हूँ");
+                updateCloudSyncStatus(false);
                 window.liveTickers.unshift(txt);
+                saveToLocal('thespeak_tickers', window.liveTickers);
                 window.setupTicker();
                 window.renderAdminTickersList();
                 e.target.reset();
@@ -1533,36 +1595,36 @@
             deleteButtons.forEach(btn => btn.disabled = true);
 
             try {
-                // Fetch all tickers to get the ID
+                // Try to delete from API first
                 const response = await fetch(`${API_BASE_URL}/tickers`);
-                const tickers = await response.json();
-                const tickerToDelete = tickers.find(t => t.text === text);
-                
-                if (tickerToDelete && tickerToDelete.id) {
-                    const deleteResponse = await fetch(`${API_BASE_URL}/tickers/${tickerToDelete.id}`, { method: 'DELETE' });
+                if (response.ok) {
+                    const tickers = await response.json();
+                    const tickerToDelete = tickers.find(t => t.text === text);
                     
-                    if (!deleteResponse.ok) {
-                        const errorData = await deleteResponse.json();
-                        throw new Error(errorData.error || 'Failed to delete ticker');
+                    if (tickerToDelete && tickerToDelete.id) {
+                        const deleteResponse = await fetch(`${API_BASE_URL}/tickers/${tickerToDelete.id}`, { method: 'DELETE' });
+                        
+                        if (deleteResponse.ok) {
+                            // Refresh data from database
+                            await fetchAllDataFromAPI();
+                        } else {
+                            throw new Error('Failed to delete from API');
+                        }
                     }
-                    
-                    // Refresh data from database to ensure frontend state is updated
-                    await fetchAllDataFromAPI();
-                } else {
-                    // Remove from local storage
-                    window.liveTickers = window.liveTickers.filter(t => t !== text);
                 }
-                
-                window.setupTicker();
-                renderAdminTickersList();
-                showToast("टिकर आइटम हटाया गया!");
             } catch (error) {
-                console.error('Ticker delete failed:', error);
-                showToast("टिकर हटाने में त्रुटि: " + error.message);
-            } finally {
-                // Re-enable delete buttons
-                deleteButtons.forEach(btn => btn.disabled = false);
+                console.warn('API delete failed, removing locally:', error);
+                // Remove from local storage as fallback
+                window.liveTickers = window.liveTickers.filter(t => t !== text);
+                saveToLocal('thespeak_tickers', window.liveTickers);
             }
+            
+            window.setupTicker();
+            renderAdminTickersList();
+            showToast("टिकर आइटम हटाया गया!");
+            
+            // Re-enable delete buttons
+            deleteButtons.forEach(btn => btn.disabled = false);
         }
 
         // RENDER ADMIN ARTICLES MANAGEMENT TABLE
@@ -1629,6 +1691,7 @@
                 } else {
                     // Remove from local storage
                     window.cloudPublishedArticles = window.cloudPublishedArticles.filter(a => a.id !== docId);
+                    saveToLocal('thespeak_articles', window.cloudPublishedArticles);
                 }
 
                 // Update all UI components

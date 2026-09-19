@@ -13,6 +13,7 @@ const PORT = process.env.PORT || 3000;
 const uploadsDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
+  console.log('Created uploads directory:', uploadsDir);
 }
 
 // Configure multer for file uploads
@@ -39,8 +40,12 @@ const upload = multer({
 });
 
 // Middleware
-app.use(cors());
-app.use(express.json());
+app.use(cors({
+  origin: '*', // Allow all origins for development
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+app.use(express.json({ limit: '10mb' })); // Increase limit for image uploads
 app.use(express.static(path.join(__dirname)));
 app.use('/uploads', express.static(uploadsDir));
 
@@ -162,10 +167,11 @@ app.post('/api/upload-image', upload.single('image'), (req, res) => {
     }
     
     const imageUrl = `/uploads/${req.file.filename}`;
+    console.log('Image uploaded successfully:', imageUrl);
     res.json({ imageUrl: imageUrl });
   } catch (err) {
     console.error('Error uploading image:', err);
-    res.status(500).json({ error: 'Failed to upload image' });
+    res.status(500).json({ error: 'Failed to upload image: ' + err.message });
   }
 });
 
