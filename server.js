@@ -72,6 +72,8 @@ pool.connect((err, client, release) => {
 // Initialize database tables
 async function initializeDatabase() {
   try {
+    console.log('🔧 Initializing database tables...');
+    
     // Create articles table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS articles (
@@ -91,6 +93,7 @@ async function initializeDatabase() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+    console.log('✅ Articles table ready');
 
     // Create tickers table
     await pool.query(`
@@ -100,10 +103,12 @@ async function initializeDatabase() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+    console.log('✅ Tickers table ready');
 
     console.log('✅ Database tables initialized successfully');
   } catch (err) {
-    console.error('Error initializing database:', err);
+    console.error('❌ Error initializing database:', err);
+    throw err; // Re-throw to prevent server from starting if DB init fails
   }
 }
 
@@ -112,11 +117,13 @@ async function initializeDatabase() {
 // Get all articles
 app.get('/api/articles', async (req, res) => {
   try {
+    console.log('📖 Fetching all articles...');
     const result = await pool.query('SELECT * FROM articles ORDER BY created_at DESC');
+    console.log(`✅ Found ${result.rows.length} articles`);
     res.json(result.rows);
   } catch (err) {
-    console.error('Error fetching articles:', err);
-    res.status(500).json({ error: 'Failed to fetch articles' });
+    console.error('❌ Error fetching articles:', err);
+    res.status(500).json({ error: 'Failed to fetch articles: ' + err.message });
   }
 });
 
@@ -338,9 +345,9 @@ app.get('/', (req, res) => {
 });
 
 // Start server
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
-  initializeDatabase();
+  await initializeDatabase();
 });
 
 module.exports = app;
